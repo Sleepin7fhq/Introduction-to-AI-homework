@@ -1,0 +1,430 @@
+"""Build the 6-slide PPT deck: strict solution of lim_{x->0} x*[1/x]."""
+import os
+import sys
+
+from pptx import Presentation
+from pptx.util import Inches, Pt
+from pptx.dml.color import RGBColor
+from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
+from pptx.enum.shapes import MSO_SHAPE
+from pptx.oxml.ns import qn
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from assets import build_formulas, build_plot, OUT, NAVY, GOLD, WHITE, CRIMSON
+
+# ---------------------------------------------------------------- palette ---
+INK = "23313D"
+MUTED = "5C6B7A"
+GRAY = "8A98A6"
+LIGHT = "F3F6FA"
+GOLDTINT = "FBF3E2"
+
+CJK = "微软雅黑"
+SW, SH = 13.333, 7.5
+M = 0.8
+CW = SW - 2 * M
+
+
+# ---------------------------------------------------------------- helpers ---
+def rgb(hexstr):
+    return RGBColor.from_string(str(hexstr).lstrip("#").upper())
+
+
+def style_run(run, size=14, bold=False, color=INK, name=CJK):
+    f = run.font
+    f.size = Pt(size)
+    f.bold = bold
+    f.color.rgb = rgb(color)
+    f.name = name
+    rPr = run._r.get_or_add_rPr()
+    for tag in ("a:ea", "a:cs"):
+        el = rPr.find(qn(tag))
+        if el is None:
+            el = rPr.makeelement(qn(tag), {})
+            rPr.append(el)
+        el.set("typeface", name)
+
+
+def textbox(slide, x, y, w, h, paras, anchor=MSO_ANCHOR.TOP,
+            align=PP_ALIGN.LEFT, wrap=True):
+    tb = slide.shapes.add_textbox(Inches(x), Inches(y), Inches(w), Inches(h))
+    tf = tb.text_frame
+    tf.word_wrap = wrap
+    tf.vertical_anchor = anchor
+    tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
+    for i, spec in enumerate(paras):
+        p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+        p.alignment = spec.get("align", align)
+        p.line_spacing = spec.get("line_spacing", 1.32)
+        p.space_after = Pt(spec.get("space_after", 0))
+        runs = spec["text"] if isinstance(spec["text"], list) else [spec]
+        for rspec in runs:
+            r = p.add_run()
+            r.text = rspec["text"]
+            style_run(r, rspec.get("size", spec.get("size", 14)),
+                      rspec.get("bold", spec.get("bold", False)),
+                      rspec.get("color", spec.get("color", INK)),
+                      rspec.get("name", spec.get("name", CJK)))
+    return tb
+
+
+def rect(slide, x, y, w, h, fill, radius=None, line=None, line_w=0.75):
+    shp_type = MSO_SHAPE.ROUNDED_RECTANGLE if radius else MSO_SHAPE.RECTANGLE
+    sh = slide.shapes.add_shape(shp_type, Inches(x), Inches(y),
+                                Inches(w), Inches(h))
+    if radius:
+        sh.adjustments[0] = min(0.5, radius / (min(w, h) / 2.0))
+    if fill:
+        sh.fill.solid()
+        sh.fill.fore_color.rgb = rgb(fill)
+    else:
+        sh.fill.background()
+    if line:
+        sh.line.color.rgb = rgb(line)
+        sh.line.width = Pt(line_w)
+    else:
+        sh.line.fill.background()
+    sh.shadow.inherit = False
+    return sh
+
+
+def card(slide, x, y, w, h, fill=LIGHT, accent=None, radius=0.07):
+    sh = rect(slide, x, y, w, h, fill, radius=radius)
+    if accent:
+        rect(slide, x, y, 0.055, h, accent, radius=0.02)
+    return sh
+
+
+def arrow(slide, x, y, w, h, fill=GOLD):
+    sh = slide.shapes.add_shape(MSO_SHAPE.RIGHT_ARROW, Inches(x), Inches(y),
+                                Inches(w), Inches(h))
+    sh.fill.solid()
+    sh.fill.fore_color.rgb = rgb(fill)
+    sh.line.fill.background()
+    sh.shadow.inherit = False
+    return sh
+
+
+def badge(slide, x, y, num, d=0.42, fill=NAVY, color=WHITE, size=15):
+    sh = slide.shapes.add_shape(MSO_SHAPE.OVAL, Inches(x), Inches(y),
+                                Inches(d), Inches(d))
+    sh.fill.solid()
+    sh.fill.fore_color.rgb = rgb(fill)
+    sh.line.fill.background()
+    sh.shadow.inherit = False
+    tf = sh.text_frame
+    tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    p = tf.paragraphs[0]
+    p.alignment = PP_ALIGN.CENTER
+    r = p.add_run()
+    r.text = str(num)
+    style_run(r, size, True, color)
+    return sh
+
+
+class F:
+    """formula asset placer (sizes derived from the rendered PNG metrics)"""
+
+    def __init__(self, info, dpi=200):
+        self.info = info
+        self.dpi = dpi
+
+    def size(self, pt):
+        i = self.info
+        s = pt / i["pt"]
+        return i["w"] / self.dpi * s, i["h"] / self.dpi * s
+
+    def fit(self, pt_cap, max_w):
+        i = self.info
+        return min(pt_cap, i["pt"] * max_w / (i["w"] / self.dpi))
+
+    def at(self, slide, cx, cy, pt):
+        w, h = self.size(pt)
+        slide.shapes.add_picture(self.info["path"], Inches(cx - w / 2),
+                                 Inches(cy - h / 2), Inches(w), Inches(h))
+        return w, h
+
+    def left(self, slide, x, cy, pt):
+        w, h = self.size(pt)
+        slide.shapes.add_picture(self.info["path"], Inches(x),
+                                 Inches(cy - h / 2), Inches(w), Inches(h))
+        return w, h
+
+    def right(self, slide, x, cy, pt):
+        w, h = self.size(pt)
+        slide.shapes.add_picture(self.info["path"], Inches(x - w),
+                                 Inches(cy - h / 2), Inches(w), Inches(h))
+        return w, h
+
+
+def header(slide, num, title, tag):
+    rect(slide, 0, 0, SW, 0.115, NAVY)
+    textbox(slide, M, 0.42, 9.4, 0.62,
+            [{"text": title, "size": 25, "bold": True, "color": NAVY}])
+    rect(slide, M + 0.02, 1.12, 0.92, 0.05, GOLD)
+    textbox(slide, SW - M - 4.2, 0.55, 4.2, 0.4,
+            [{"text": tag, "size": 12, "color": GRAY}], align=PP_ALIGN.RIGHT)
+    textbox(slide, M, 6.99, 6.0, 0.3,
+            [{"text": "取整函数极限 · 夹逼定理", "size": 10.5, "color": GRAY}])
+    textbox(slide, SW - M - 1.2, 6.99, 1.2, 0.3,
+            [{"text": f"{num:02d}", "size": 10.5, "bold": True, "color": NAVY}],
+            align=PP_ALIGN.RIGHT)
+
+
+def step_card(slide, x, y, w, h, num, title, fill=LIGHT, accent=None,
+              badge_fill=NAVY):
+    card(slide, x, y, w, h, fill=fill, accent=accent, radius=0.08)
+    badge(slide, x + 0.3, y + 0.205, num, fill=badge_fill)
+    textbox(slide, x + 0.92, y + 0.28, w - 1.3, 0.4,
+            [{"text": title, "size": 16, "bold": True, "color": NAVY}])
+
+
+# ------------------------------------------------------------------ slides ---
+def slide_cover(prs, fx):
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    rect(slide, 0, 0, SW, SH, NAVY)
+    rect(slide, 0, 0, SW, 0.14, GOLD)
+
+    textbox(slide, M + 0.2, 1.34, 8.6, 0.4,
+            [{"text": "高 等 数 学   ·   极 限 与 取 整 函 数", "size": 13.5,
+              "bold": True, "color": "E0BE72"}])
+    textbox(slide, M + 0.2, 1.82, 11.0, 0.95,
+            [{"text": "取整函数极限的严格求解", "size": 40, "bold": True,
+              "color": WHITE, "line_spacing": 1.1}])
+    textbox(slide, M + 0.2, 2.92, 10.4, 0.45,
+            [{"text": "一道看似一步可解、却在严谨性上最容易失分的极限题",
+              "size": 16, "color": "AFC3D6"}])
+    rect(slide, M + 0.2, 3.52, 1.5, 0.05, GOLD)
+
+    card(slide, M + 0.2, 3.88, CW - 0.4, 1.78, fill="16375A", radius=0.09)
+    fx["cover_main"].at(slide, M + 0.2 + (CW - 0.4) / 2, 4.77, 42)
+
+    chips = ["夹逼定理", "单侧极限", "分数部分分解"]
+    cx = M + 0.2
+    for c in chips:
+        w = 0.5 + 0.235 * len(c)
+        sh = rect(slide, cx, 6.12, w, 0.5, None, radius=0.25,
+                  line="4E7396", line_w=0.9)
+        tf = sh.text_frame
+        tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+        p = tf.paragraphs[0]
+        p.alignment = PP_ALIGN.CENTER
+        r = p.add_run()
+        r.text = c
+        style_run(r, 13, False, "DCC58C")
+        cx += w + 0.28
+    textbox(slide, SW - M - 4.4, 6.2, 4.4, 0.35,
+            [{"text": "结论：极限存在，其值为 1", "size": 13, "bold": True,
+              "color": "E0BE72"}], align=PP_ALIGN.RIGHT)
+    return slide
+
+
+def slide_problem(prs, fx):
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    header(slide, 2, "问题与关键工具", "求极限 · 思路定位")
+
+    textbox(slide, M, 1.3, CW, 0.42,
+            [{"text": "设 [t] 表示不超过 t 的最大整数（向下取整），求下列极限，"
+                      "其中 x ≠ 0：", "size": 15.5, "color": INK}])
+    card(slide, M, 1.74, CW, 1.34, fill=LIGHT, radius=0.08)
+    fx["q_main"].at(slide, M + CW / 2, 2.41, 34)
+
+    cw = (CW - 0.32) / 2
+    x1, x2, cy0, ch = M, M + cw + 0.32, 3.24, 2.4
+    card(slide, x1, cy0, cw, ch, fill=LIGHT, accent=GOLD, radius=0.08)
+    textbox(slide, x1 + 0.34, cy0 + 0.26, cw - 0.68, 0.34,
+            [{"text": "关键工具 · 取整的基本不等式", "size": 16, "bold": True,
+              "color": NAVY}])
+    fx["ineq_basic"].left(slide, x1 + 0.34, cy0 + 1.0, 29)
+    fx["ineq_error"].left(slide, x1 + 0.34, cy0 + 1.62, 20)
+    textbox(slide, x1 + 0.34, cy0 + 1.96, cw - 0.68, 0.35,
+            [{"text": "对任意实数 t 成立：取整误差恒小于 1。", "size": 13.5,
+              "color": MUTED}])
+
+    card(slide, x2, cy0, cw, ch, fill=LIGHT, accent=NAVY, radius=0.08)
+    textbox(slide, x2 + 0.34, cy0 + 0.26, cw - 0.68, 0.34,
+            [{"text": "代入 t = 1/x · 把取整项夹住", "size": 16, "bold": True,
+              "color": NAVY}])
+    fx["ineq_recip"].left(slide, x2 + 0.34, cy0 + 1.12, 25)
+    textbox(slide, x2 + 0.34, cy0 + 1.74, cw - 0.68, 0.75,
+            [{"text": "取整项 [1/x] 夹在 1/x ? 1 与 1/x 之间，两者只差 1；"
+                      "x → 0 时它们都趋于无穷，只能靠夹逼定位乘积。",
+              "size": 13, "color": MUTED}])
+
+    card(slide, M, 5.82, CW, 1.0, fill=NAVY, accent=GOLD, radius=0.08)
+    textbox(slide, M + 0.42, 5.82, CW - 0.9, 1.0,
+            [{"text": [{"text": "核心想法    ", "size": 15, "bold": True,
+                        "color": "E0BE72"},
+                       {"text": "取整造成的偏移不超过 1，再乘上趋于 0 的 x，"
+                                "偏移被压成 0，剩下的就是 1。", "size": 14.5,
+                        "color": "EAF1F8"}]}], anchor=MSO_ANCHOR.MIDDLE)
+    return slide
+
+
+def slide_right(prs, fx):
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    header(slide, 3, "第一步：右极限 x → 0+", "夹逼定理")
+
+    y1, h1 = 1.34, 1.6
+    step_card(slide, M, y1, CW, h1, 1, "应用基本不等式，取 t = 1/x")
+    fx["ineq_recip"].left(slide, M + 0.95, y1 + 1.08, 25)
+
+    y2 = 3.12
+    step_card(slide, M, y2, CW, h1, 2, "因为 x > 0，两边同乘正数 x，不等号方向不变")
+    fx["right_mul"].left(slide, M + 0.95, y2 + 1.08, 26)
+
+    y3, h3 = 4.9, 1.9
+    step_card(slide, M, y3, CW, h3, 3, "两端都趋于 1，由夹逼定理得右极限",
+              fill=GOLDTINT, accent=GOLD, badge_fill=GOLD)
+    fx["right_lim"].left(slide, M + 0.95, y3 + 1.25, 22)
+    arrow(slide, 6.34, y3 + 1.17, 0.6, 0.16)
+    fx["right_res"].left(slide, M + 7.4, y3 + 1.25, 29)
+    return slide
+
+
+def slide_left(prs, fx):
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    header(slide, 4, "第二步：左极限 x → 0? 与最终结论", "两侧必须分别验证")
+
+    y1, h1 = 1.34, 1.62
+    step_card(slide, M, y1, CW, h1, 1, "因为 x < 0，两边同乘负数 x 时不等号反向")
+    fx["left_ineq"].left(slide, M + 0.95, y1 + 1.1, 26)
+
+    y2 = 3.14
+    step_card(slide, M, y2, CW, h1, 2, "两端仍趋于 1，夹逼给出左极限")
+    fx["left_lim"].left(slide, M + 0.95, y2 + 1.05, 23)
+    fx["left_res"].left(slide, M + 7.4, y2 + 1.05, 26)
+
+    y3, h3 = 4.92, 1.88
+    card(slide, M, y3, CW, h3, fill=NAVY, accent=GOLD, radius=0.08)
+    textbox(slide, M + 0.42, y3 + 0.26, CW - 0.9, 0.4,
+            [{"text": "左右极限都存在且相等，故双侧极限存在，且",
+              "size": 15.5, "bold": True, "color": "EAF1F8"}])
+    fx["final_white"].left(slide, M + 0.45, y3 + 1.2, 30)
+    textbox(slide, M + 6.3, y3 + 0.82, 5.3, 0.8,
+            [{"text": "右侧恒有 1 ? x < y ≤ 1，左侧恒有 1 ≤ y < 1 ? x："
+                      "两条单侧路径都通向同一个数。",
+              "size": 13, "color": "AFC3D6"}])
+    return slide
+
+
+def slide_alt(prs, fx):
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    header(slide, 5, "另解：分数部分分解，一步到位", "恒等变形")
+
+    y1, h1 = 1.3, 1.28
+    step_card(slide, M, y1, CW, h1, 1,
+              "任何实数都能唯一写成「整数部分 + 分数部分」")
+    fx["frac_def"].left(slide, M + 0.95, y1 + 0.92, 22)
+
+    y2 = 2.7
+    step_card(slide, M, y2, CW, 1.78, 2, "把 t = 1/x 代入，得到恒等式")
+    fx["decomp"].left(slide, M + 0.42, y2 + 1.14, 30)
+
+    y3 = 4.6
+    step_card(slide, M, y3, CW, 1.36, 3, "误差被 |x| 压住，故极限为 1")
+    w, _ = fx["bound"].left(slide, M + 0.95, y3 + 0.92, 21)
+    fx["final"].left(slide, M + 0.95 + w + 0.45, y3 + 0.92, 21)
+
+    y4 = 6.02
+    card(slide, M, y4, CW, 0.8, fill=GOLDTINT, accent=GOLD, radius=0.08)
+    textbox(slide, M + 0.42, y4 + 0.1, CW - 0.9, 0.6,
+            [{"text": [{"text": "关键洞察    ", "size": 13, "bold": True,
+                        "color": "9A6B12"},
+                       {"text": "取整误差有界（小于 1），乘上趋于 0 的 x 后必然消失；"
+                                "把 [1/x] 直接当作 1/x 而不加说明，是常见失分点。",
+                        "size": 12.5, "color": "7A5A18"}]}], anchor=MSO_ANCHOR.MIDDLE)
+    return slide
+
+
+def slide_numeric(prs, fx, plot):
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    header(slide, 6, "数值验证与图像", "结论与延伸")
+
+    rows = [("x", "[1/x]", "x·[1/x]"),
+            ("0.4", "2", "0.80"),
+            ("0.3", "3", "0.90"),
+            ("0.1", "10", "1.00"),
+            ("?0.1", "?10", "1.00"),
+            ("?0.3", "?4", "1.20"),
+            ("?0.4", "?3", "1.20")]
+    x0, y0, tw, rh = M, 1.42, 6.05, 0.5
+    shape = slide.shapes.add_table(len(rows), 3, Inches(x0), Inches(y0),
+                                   Inches(tw), Inches(rh * len(rows)))
+    table = shape.table
+    table.first_row = False
+    table.horz_banding = False
+    # switch to the built-in "No Style, No Grid" so only our own fills show
+    style_id = table._tbl.tblPr.find(qn("a:tableStyleId"))
+    if style_id is not None:
+        style_id.text = "{2D5ABB26-0587-4C30-8999-92F81FD0307C}"
+    for c, w in zip(table.columns, (2.0, 1.95, 2.1)):
+        c.width = Inches(w)
+    for i, row in enumerate(rows):
+        table.rows[i].height = Inches(rh)
+        for j, val in enumerate(row):
+            cell = table.cell(i, j)
+            cell.margin_left = Inches(0.12)
+            cell.margin_right = Inches(0.12)
+            cell.margin_top = Inches(0.02)
+            cell.margin_bottom = Inches(0.02)
+            cell.vertical_anchor = MSO_ANCHOR.MIDDLE
+            cell.fill.solid()
+            cell.fill.fore_color.rgb = rgb(NAVY if i == 0 else
+                                           (WHITE if i % 2 else LIGHT))
+            p = cell.text_frame.paragraphs[0]
+            p.alignment = PP_ALIGN.LEFT if j == 0 else PP_ALIGN.CENTER
+            r = p.add_run()
+            r.text = val
+            if i == 0:
+                style_run(r, 13.5, True, WHITE)
+            elif j == 2:
+                style_run(r, 13.5, True, CRIMSON)
+            else:
+                style_run(r, 13.5, False, INK)
+    textbox(slide, x0 + 0.05, y0 + rh * len(rows) + 0.18, tw - 0.1, 0.65,
+            [{"text": "表中每个值都落在 1 ± |x| 之间：右侧 1 ? x < y ≤ 1，"
+                      "左侧 1 ≤ y < 1 ? x。", "size": 12.5, "color": MUTED}])
+
+    slide.shapes.add_picture(plot["path"], Inches(7.28), Inches(1.42),
+                             width=Inches(5.25))
+    textbox(slide, 7.28, 5.12, 5.25, 0.6,
+            [{"text": "曲线随 x → 0 被夹在逐渐收拢的带形区域内，并趋于点 (0, 1)。",
+              "size": 12.5, "color": MUTED}])
+
+    y = 5.86
+    card(slide, M, y, CW, 1.0, fill=NAVY, accent=GOLD, radius=0.08)
+    fx["final_white"].left(slide, M + 0.42, y + 0.5, 25)
+    textbox(slide, M + 3.3, y + 0.19, 3.9, 0.62,
+            [{"text": "结论：左右极限相等，故原极限为 1。",
+              "size": 13.5, "bold": True, "color": "EAF1F8"}],
+            anchor=MSO_ANCHOR.MIDDLE)
+    textbox(slide, 7.4, y + 0.19, 2.45, 0.62,
+            [{"text": "延伸（a ≠ 0）", "size": 12.5, "color": "AFC3D6"}],
+            anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.RIGHT)
+    fx["gen"].right(slide, SW - M - 0.42, y + 0.5, 20)
+    return slide
+
+
+# -------------------------------------------------------------------- main ---
+if __name__ == "__main__":
+    fx_info = build_formulas()
+    plot = build_plot()
+    fx = {k: F(v) for k, v in fx_info.items()}
+
+    prs = Presentation()
+    prs.slide_width = Inches(SW)
+    prs.slide_height = Inches(SH)
+
+    slide_cover(prs, fx)
+    slide_problem(prs, fx)
+    slide_right(prs, fx)
+    slide_left(prs, fx)
+    slide_alt(prs, fx)
+    slide_numeric(prs, fx, plot)
+
+    out = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                       "..", "取整函数极限的严格求解.pptx"))
+    prs.save(out)
+    print("saved", out)

@@ -1,0 +1,118 @@
+"""Generate formula images (matplotlib mathtext) and the verification plot."""
+import os
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import numpy as np
+from PIL import Image
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+OUT = os.path.join(HERE, "assets")
+os.makedirs(OUT, exist_ok=True)
+
+NAVY = "#0F2A44"
+GOLD = "#B8860B"
+WHITE = "#FFFFFF"
+CRIMSON = "#A62B1F"
+
+matplotlib.rcParams["mathtext.fontset"] = "dejavusans"
+
+RENDER_PT = 48.0   # reference point size of the rendered images
+DPI = 200
+
+
+def render_formula(name, tex, color=NAVY, pad=0.06):
+    """Render a math string to a transparent PNG; return (path, w_px, h_px)."""
+    fig = plt.figure(figsize=(0.1, 0.1))
+    fig.text(0, 0, tex, fontsize=RENDER_PT, color=color)
+    path = os.path.join(OUT, name + ".png")
+    fig.savefig(path, dpi=DPI, transparent=True,
+                bbox_inches="tight", pad_inches=pad)
+    plt.close(fig)
+    with Image.open(path) as im:
+        return path, im.size[0], im.size[1]
+
+
+FORMULAS = {
+    # cover
+    "cover_main": (r"$\lim_{x\to 0}\ x\left\lfloor \dfrac{1}{x}\right\rfloor$", WHITE, 0.10),
+    # slide 2
+    "q_main":     (r"$\lim_{x\to 0}\ x\left\lfloor \dfrac{1}{x}\right\rfloor$", NAVY, 0.10),
+    "ineq_basic": (r"$t-1\ <\ \lfloor t\rfloor\ \leq\ t$", NAVY, 0.10),
+    "ineq_error": (r"$0\ \leq\ t-\lfloor t\rfloor\ <\ 1$", NAVY, 0.10),
+    "ineq_recip": (r"$\dfrac{1}{x}-1\ <\ \left\lfloor \dfrac{1}{x}\right\rfloor\ \leq\ \dfrac{1}{x}$", NAVY, 0.10),
+    # slide 3
+    "right_mul":  (r"$1-x\ <\ x\left\lfloor \dfrac{1}{x}\right\rfloor\ \leq\ 1$", NAVY, 0.10),
+    "right_lim":  (r"$\lim_{x\to 0^{+}}(1-x)\ =\ 1\ =\ \lim_{x\to 0^{+}}1$", NAVY, 0.10),
+    "right_res":  (r"$\lim_{x\to 0^{+}}\ x\left\lfloor \dfrac{1}{x}\right\rfloor\ =\ 1$", NAVY, 0.10),
+    # slide 4
+    "left_ineq":  (r"$1\ \leq\ x\left\lfloor \dfrac{1}{x}\right\rfloor\ <\ 1-x$", NAVY, 0.10),
+    "left_lim":   (r"$\lim_{x\to 0^{-}}(1-x)\ =\ 1$", NAVY, 0.10),
+    "left_res":   (r"$\lim_{x\to 0^{-}}\ x\left\lfloor \dfrac{1}{x}\right\rfloor\ =\ 1$", NAVY, 0.10),
+    "final":      (r"$\lim_{x\to 0}\ x\left\lfloor \dfrac{1}{x}\right\rfloor\ =\ 1$", NAVY, 0.10),
+    "final_white": (r"$\lim_{x\to 0}\ x\left\lfloor \dfrac{1}{x}\right\rfloor\ =\ 1$", WHITE, 0.10),
+    # slide 5
+    "frac_def":   (r"$t\ =\ \lfloor t\rfloor+\{t\},\qquad 0\ \leq\ \{t\}\ <\ 1$", NAVY, 0.10),
+    "decomp":     (r"$x\left\lfloor \dfrac{1}{x}\right\rfloor=x\left(\dfrac{1}{x}-\left\{\dfrac{1}{x}\right\}\right)=1-x\left\{\dfrac{1}{x}\right\}$", NAVY, 0.10),
+    "bound":      (r"$\left|\,x\left\{\dfrac{1}{x}\right\}\right|\ \leq\ |x|\ \longrightarrow\ 0$", NAVY, 0.10),
+    "gen":        (r"$\lim_{x\to 0}\ x\left\lfloor \dfrac{a}{x}\right\rfloor\ =\ a$", "#E4C87F", 0.10),
+}
+
+
+def build_formulas():
+    info = {}
+    for name, (tex, color, pad) in FORMULAS.items():
+        path, w, h = render_formula(name, tex, color=color, pad=pad)
+        info[name] = {"path": path, "w": w, "h": h, "pt": RENDER_PT}
+        print(f"formula {name:12s} {w:5d}x{h:<5d}")
+    return info
+
+
+def build_plot():
+    xs = np.linspace(-0.8, 0.8, 20001)
+    xs = xs[np.abs(xs) > 1e-6]
+    ys = xs * np.floor(1.0 / xs)
+
+    fig, ax = plt.subplots(figsize=(5.4, 3.7), dpi=200)
+    fig.patch.set_facecolor("white")
+
+    ax.fill_between(xs, 1 - np.abs(xs), 1 + np.abs(xs),
+                    color="#D9B45B", alpha=0.22, lw=0, zorder=1)
+    ax.axhline(1.0, color=CRIMSON, lw=1.1, ls=(0, (5, 4)), zorder=2)
+    ax.plot(xs, ys, color=NAVY, lw=1.0, zorder=3)
+    ax.plot([0], [1], marker="o", ms=7, mfc="white", mec=CRIMSON,
+            mew=1.6, zorder=5, clip_on=False)
+
+    ax.plot([], [], color=NAVY, lw=1.6, label=r"$y=x\lfloor 1/x\rfloor$")
+    ax.plot([], [], color="#D9B45B", lw=7, alpha=0.55,
+            label=r"$1-|x|\ \leq\ y\ \leq\ 1+|x|$")
+    ax.plot([], [], color=CRIMSON, lw=1.2, ls=(0, (5, 4)), label=r"$y=1$")
+
+    ax.set_xlim(-0.8, 0.8)
+    ax.set_ylim(0.05, 1.95)
+    ax.set_xlabel(r"$x$", fontsize=11)
+    ax.set_ylabel(r"$y$", fontsize=11)
+    ax.tick_params(labelsize=9, colors="#4A5A68")
+    ax.grid(True, color="#E6ECF2", lw=0.7, zorder=0)
+    ax.set_axisbelow(True)
+    for s in ("top", "right"):
+        ax.spines[s].set_visible(False)
+    for s in ("left", "bottom"):
+        ax.spines[s].set_color("#C3CFDA")
+    leg = ax.legend(loc="upper center", frameon=False, fontsize=9.5,
+                    ncol=1, handlelength=1.8, labelspacing=0.35,
+                    borderaxespad=0.2)
+    for t in leg.get_texts():
+        t.set_color("#33414E")
+    fig.tight_layout(pad=0.35)
+    path = os.path.join(OUT, "plot.png")
+    fig.savefig(path, dpi=200, facecolor="white")
+    plt.close(fig)
+    with Image.open(path) as im:
+        print("plot", im.size)
+    return {"path": path}
+
+
+if __name__ == "__main__":
+    build_formulas()
+    build_plot()
