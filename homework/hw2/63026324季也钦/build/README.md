@@ -7,7 +7,7 @@ Python 3.12，依赖 numpy scipy matplotlib。原运行版本：NumPy 2.3.5、Sc
 
 
 
-build/content.py 保存演示文稿完整中文内容、说明及 LaTeX 公式源，可用 matplotlib 再生成复杂公式高清图。build/deck.mjs 使用 JavaScript Artifact Tool 创建可编辑正文、表格、示意图、流程图和 PPTX，需要原 ChatGPT Work 的 Artifact Tool 及演示文稿验证工具环境。其代码中的运行环境路径需按使用环境调整。
+build/content.py 保存演示文稿完整中文内容、说明及 LaTeX 公式源，可用 matplotlib 再生成复杂公式高清图。build/deck.mjs 使用 JavaScript Artifact Tool 创建可编辑正文、表格、示意图、流程图和 PPTX，其代码中的运行环境路径需按使用环境调整。
 
 ## 模型及必要前提
 
