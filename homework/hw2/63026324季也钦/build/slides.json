@@ -1,0 +1,571 @@
+[
+  {
+    "title": "悬链线：从约束能量到静力学平衡",
+    "lead": "均匀柔软绳索的解析推导、全局最小性与数值验证",
+    "texts": [],
+    "eqs": [],
+    "chart": null,
+    "notes": "自设研究问题。本文独立推导，不以已知悬链线公式作为证明。数值结果由 research.py 实际运行生成。",
+    "kind": "cover",
+    "table": null
+  },
+  {
+    "title": "研究逻辑与验证路径",
+    "lead": "从物理假设出发，分别检查必要条件、充分条件与计算误差",
+    "texts": [],
+    "eqs": [],
+    "chart": null,
+    "notes": "解析主线：物理模型，势能与固定长度，等式约束变分，Euler–Lagrange方程，普通微分方程求解，边界与长度。验证支线：弧长受力平衡，正张力全局证明，射击法与离散优化。",
+    "kind": "flow",
+    "table": null
+  },
+  {
+    "title": "二维悬挂绳索与端点受力",
+    "lead": "x 轴水平向右，y 轴竖直向上，势能零点取左端点高度",
+    "texts": [],
+    "eqs": [],
+    "chart": null,
+    "notes": "设 A=(x1,y1), B=(x2,y2)，D=x2-x1>0。以从A到B的弧长s定向，内力向量Q=T t。支持力作用在整根绳索上分别为-Q(0)和Q(L)，重力向下。最低点x0不一定处于两端之间。",
+    "kind": "schematic",
+    "table": null
+  },
+  {
+    "title": "物理量与几何量",
+    "lead": "线密度按实际绳长定义，张力沿绳索切线",
+    "texts": [],
+    "eqs": [],
+    "chart": null,
+    "notes": "",
+    "kind": "standard",
+    "table": [
+      [
+        "符号",
+        "定义",
+        "量纲 / 条件"
+      ],
+      [
+        "A、B",
+        "固定端点 (x₁,y₁)、(x₂,y₂)",
+        "m，x₂>x₁"
+      ],
+      [
+        "L、ρ、g",
+        "绳长、均匀线密度、重力加速度",
+        "m，kg/m，m/s²"
+      ],
+      [
+        "w=ρg",
+        "单位实际弧长的重量",
+        "N/m，w>0"
+      ],
+      [
+        "s、r(s)、t(s)",
+        "材料弧长、位置、单位切向量",
+        "0≤s≤L，t=r′"
+      ],
+      [
+        "T(s)、H、V(s)",
+        "张力大小、水平及竖直分量",
+        "N，T>0"
+      ],
+      [
+        "a、x₀、c、λ",
+        "尺度、最低点位置、偏移、乘子",
+        "a,x₀,c：m，λ：N"
+      ]
+    ]
+  },
+  {
+    "title": "理想化假设与成立范围",
+    "lead": "只研究重力与端点约束作用下的静态平衡",
+    "texts": [
+      "均匀且不可伸长：dm=ρ ds，材料弧长保持不变",
+      "完全柔软：忽略抗弯刚度，内力只能沿切线",
+      "固定端点、均匀重力、无地面接触及其他分布载荷",
+      "允许曲线在二维平面内自由变化，不加入摩擦与弹性能"
+    ],
+    "eqs": [],
+    "chart": null,
+    "notes": "取AC单位速率曲线作为全局比较类，光滑图像用于E-L推导。要求L大于端点直线距离且D>0。不能用本结论直接描述可伸长电缆、刚性梁、接地绳、非均匀质量分布或按水平长度施加的均匀载荷。",
+    "kind": "standard",
+    "table": null
+  },
+  {
+    "title": "总重力势能由质量元直接积分",
+    "lead": "y 向上，因此重力势能为正的 w∫y ds",
+    "texts": [
+      "在弧长参数下，密度与积分区间均固定",
+      "图像参数下，弧长因子随形状改变，不能忽略"
+    ],
+    "eqs": [
+      "dm=\\rho\\,ds,\\qquad dU=g\\,y\\,dm=w\\,y\\,ds",
+      "U[\\mathbf r]=w\\int_0^L y(s)\\,ds",
+      "ds=\\sqrt{1+y^{\\prime 2}}\\,dx,\\qquad U[y]=w\\int_{x_1}^{x_2}y\\sqrt{1+y^{\\prime 2}}\\,dx"
+    ],
+    "chart": null,
+    "notes": "y的零点可以任意选定。固定L时，平移高度零点使所有可行曲线的能量同增w b L，不改变极小曲线。",
+    "kind": "standard",
+    "table": null
+  },
+  {
+    "title": "固定绳长给出等式约束",
+    "lead": "边界固定与弧长固定必须同时满足",
+    "texts": [
+      "图像可行集 𝒜L：满足端点条件和 S[y]=L 的正则曲线",
+      "弧长可行类：r(0)=A，r(L)=B，|r′(s)|=1 几乎处处"
+    ],
+    "eqs": [
+      "S[y]=\\int_{x_1}^{x_2}\\sqrt{1+y^{\\prime 2}}\\,dx=L",
+      "y(x_1)=y_1,\\qquad y(x_2)=y_2",
+      "\\min_{y\\in\\mathcal A_L}\\ U[y]"
+    ],
+    "chart": null,
+    "notes": "图像类仅用于导出候选解。最后的全局证明在所有AC单位速率二维曲线中比较，覆盖回折曲线。可行性要求L≥d=|B-A|。本项目主体取L>d。",
+    "kind": "standard",
+    "table": null
+  },
+  {
+    "title": "最小势能原理与驻值条件的区别",
+    "lead": "稳定的保守系统平衡对应可行扰动下的势能极小",
+    "texts": [
+      "重力是保守力，固定端点不做虚功",
+      "理想不可伸长约束不做允许虚位移的功",
+      "一阶变分为零给出平衡的必要条件",
+      "本文另证全局能量不等式，因此不把驻值直接当作最小值"
+    ],
+    "eqs": [
+      "\\delta U=0\\quad\\hbox{on admissible variations}"
+    ],
+    "chart": null,
+    "notes": "最小势能原理适用于稳定平衡，但一般静力学驻值也可能不稳定。本文不假设所有平衡都最小，而是在求得正张力候选曲线后证明全局最小性。没有阻尼的理想绳索不会自动从任意初态停止，静态解不等价于动力学收敛。",
+    "kind": "standard",
+    "table": null
+  },
+  {
+    "title": "常数乘子与约束正则性",
+    "lead": "采用 Jλ=U+λ(S−L) 的符号约定",
+    "texts": [
+      "λ 为单个全局长度约束的常数乘子，量纲为 N",
+      "η 在两端为零，乘子法允许暂时考虑任意此类 η",
+      "L>d 排除直线，使约束导数不恒为零"
+    ],
+    "eqs": [
+      "J_\\lambda[y]=\\int_{x_1}^{x_2}(wy+\\lambda)\\sqrt{1+y^{\\prime 2}}\\,dx-\\lambda L",
+      "\\delta S[\\eta]=\\int_{x_1}^{x_2}\\frac{y^\\prime\\eta^\\prime}{\\sqrt{1+y^{\\prime 2}}}\\,dx"
+    ],
+    "chart": null,
+    "notes": "若δS[η]=0对所有端点为零的η成立，分部积分给出d/dx(y′/sqrt(1+y′²))=0，故y′恒定，曲线为直线且S=d。L>d时约束正则，标准等周问题乘子法可用。",
+    "kind": "standard",
+    "table": null
+  },
+  {
+    "title": "完整一阶变分与 Euler–Lagrange 方程",
+    "lead": "令 p=y′，q=√(1+p²)，对端点为零的 η 分部积分",
+    "texts": [
+      "边界项因 η(x₁)=η(x₂)=0 消失",
+      "关键化简：d(p/q)/dx=y″/q³"
+    ],
+    "eqs": [
+      "\\delta J_\\lambda=\\int_{x_1}^{x_2}\\left[wq\\eta+(wy+\\lambda)\\frac{p}{q}\\eta^\\prime\\right]dx",
+      "wq-\\frac{d}{dx}\\left[(wy+\\lambda)\\frac{p}{q}\\right]=0",
+      "(wy+\\lambda)y^{\\prime\\prime}=w(1+y^{\\prime 2})"
+    ],
+    "chart": null,
+    "notes": "展开d[(wy+λ)p/q]/dx=w p²/q+(wy+λ)y″/q³。wq-wp²/q=w/q，乘q³得到最终方程。这里仅获得驻值的必要条件。",
+    "kind": "standard",
+    "table": null
+  },
+  {
+    "title": "普通微分方程方法：先降低阶数",
+    "lead": "设 z=y+λ/w，在张力为正的物理解分支上 z>0",
+    "texts": [
+      "在 p≠0 的单调区间使用 p(z)，积分常数可连续延拓",
+      "最低点处 p=0，由原方程保持光滑"
+    ],
+    "eqs": [
+      "zz^{\\prime\\prime}=1+z^{\\prime 2}",
+      "p=z^\\prime,\\qquad z p\\frac{dp}{dz}=1+p^2",
+      "\\frac12\\ln(1+p^2)=\\ln z+C",
+      "1+z^{\\prime 2}=\\frac{z^2}{a^2},\\qquad a>0"
+    ],
+    "chart": null,
+    "notes": "从z p dp/dz=1+p²积分得到1+p²=K z²。K>0，定义a=1/sqrt(K)。物理解要求正张力，稍后独立力学验证T=wz>0。E-L另有z<0的倒悬分支，应结合稳定性与只能承受拉力的绳索排除。",
+    "kind": "standard",
+    "table": null
+  },
+  {
+    "title": "线性化求解得到双曲余弦",
+    "lead": "代回原方程得到 z″=z/a²，无需直接引用已知曲线",
+    "texts": [
+      "z>0 使 A、B 均为正，最低点横坐标为 x₀",
+      "a 控制弯曲尺度，c 是高度偏移"
+    ],
+    "eqs": [
+      "z^{\\prime\\prime}=z/a^2,\\qquad z=Ae^{x/a}+Be^{-x/a}",
+      "z^2-a^2z^{\\prime 2}=4AB=a^2",
+      "A=\\frac a2 e^{-x_0/a},\\qquad B=\\frac a2 e^{x_0/a}",
+      "\\boxed{y(x)=a\\cosh\\!\\left(\\frac{x-x_0}{a}\\right)+c},\\qquad c=-\\lambda/w"
+    ],
+    "chart": null,
+    "notes": "因为AB=a²/4且z在区间为正，A,B必须为正。由A/B定义x0，得到双曲余弦。通过线性方程求解避免在最低点分离变量时符号选择不连续。",
+    "kind": "standard",
+    "table": null
+  },
+  {
+    "title": "一般端点条件归约为一个标量方程",
+    "lead": "令 D=x₂−x₁，Δ=y₂−y₁，xm=(x₁+x₂)/2",
+    "texts": [
+      "差高来自两端 y 值之差，长度来自 ∫cosh((x−x₀)/a)dx",
+      "先解 a，再求 x₀ 与 c"
+    ],
+    "eqs": [
+      "u=\\frac{D}{2a},\\qquad v=\\frac{x_m-x_0}{a}",
+      "\\Delta=2a\\sinh u\\sinh v,\\qquad L=2a\\sinh u\\cosh v",
+      "\\tanh v=\\Delta/L,\\qquad \\sqrt{L^2-\\Delta^2}=2a\\sinh\\!\\left(\\frac D{2a}\\right)"
+    ],
+    "chart": null,
+    "notes": "u,v定义使端点无量纲坐标分别为v-u和v+u。使用cosh(v+u)-cosh(v-u)=2sinh(v)sinh(u)，以及sinh(v+u)-sinh(v-u)=2cosh(v)sinh(u)。",
+    "kind": "standard",
+    "table": null
+  },
+  {
+    "title": "存在唯一性与退化边界",
+    "lead": "在 D>0、w>0、L>√(D²+Δ²) 时，正张力解唯一",
+    "texts": [
+      "sinh(u)/u 从 1 严格增加到无穷，故唯一正根",
+      "L<端点距离：无可行曲线。L=端点距离：仅有直线",
+      "直线情形约束退化，在非零重力下不具有限张力的柔绳平衡"
+    ],
+    "eqs": [
+      "\\frac{\\sinh u}{u}=\\frac{\\sqrt{L^2-\\Delta^2}}D>1,\\qquad u>0",
+      "\\frac d{du}\\frac{\\sinh u}{u}=\\frac{u\\cosh u-\\sinh u}{u^2}>0",
+      "x_0=x_m-a\\operatorname{artanh}(\\Delta/L),\\quad c=y_1-a\\cosh\\!\\left(\\frac{x_1-x_0}{a}\\right)"
+    ],
+    "chart": null,
+    "notes": "导数分子h(u)=u cosh u-sinh u满足h(0)=0,h′(u)=u sinh u>0。D=0的竖直退化情形不属于此图像推导。对Δ≠0且绳长接近d，x0可能在区间外，不能默认最低点位于跨度内。",
+    "kind": "standard",
+    "table": null
+  },
+  {
+    "title": "独立物理推导：绳索微元受力",
+    "lead": "令 Q=Tt=(H,V)，按 A 到 B 的方向取弧长 s",
+    "texts": [],
+    "eqs": [
+      "\\frac{d\\mathbf Q}{ds}=(0,w),\\qquad H=\\mathrm{const}>0",
+      "V=Hy^\\prime,\\qquad \\frac{dV}{dx}=w\\frac{ds}{dx}",
+      "Hy^{\\prime\\prime}=w\\sqrt{1+y^{\\prime 2}},\\qquad a=H/w"
+    ],
+    "chart": null,
+    "notes": "微元左端受-Q(s)，右端受Q(s+ds)，重力为(0,-w ds)，平衡给出Q′=(0,w)。切向约束Q=Tt给出V=H y′。对p积分：dp/sqrt(1+p²)=dx/a，故asinh p=(x-x0)/a；p=sinh，积分得到y=a cosh+c。此推导不使用能量泛函。",
+    "kind": "force",
+    "table": null
+  },
+  {
+    "title": "张力解释与乘子符号",
+    "lead": "Beltrami 常量等于水平张力，增广权重等于张力大小",
+    "texts": [
+      "本符号约定 U+λ(S−L)：λ 是长度价值函数的负导数",
+      "若采用 U−μ(S−L)，则 μ=−λ，且 T=wy−μ",
+      "高度坐标改为 y+b 时，λ 改为 λ−wb，T 与 H 不变"
+    ],
+    "eqs": [
+      "H=wa,\\qquad V(x)=wa\\sinh\\!\\left(\\frac{x-x_0}{a}\\right)",
+      "T(x)=H\\sqrt{1+y^{\\prime 2}}=wa\\cosh\\!\\left(\\frac{x-x_0}{a}\\right)=wy+\\lambda",
+      "\\lambda=-wc,\\qquad \\frac{dU_*(L)}{dL}=-\\lambda"
+    ],
+    "chart": null,
+    "notes": "λ具有力的量纲，但数值依赖势能零点，不应无条件称为水平张力。此处y1=0使λ=T(A)，这是当前零点造成的数值等式。包络结论在固定端点及当前势能零点下成立。",
+    "kind": "standard",
+    "table": null
+  },
+  {
+    "title": "全局最小性：弧长坐标中的能量证书",
+    "lead": "与任意满足同端点、同长度的 AC 单位速率曲线 r 比较",
+    "texts": [
+      "分部积分的端点项为零，|t*|=|r′|=1",
+      "T*>0 与 Cauchy–Schwarz 不等式给出全局下界",
+      "等号迫使 r′=t* 几乎处处，同端点使 r=r*"
+    ],
+    "eqs": [
+      "\\mathbf Q_*(s)=T_*(s)\\mathbf t_*(s),\\qquad \\mathbf Q_*^\\prime=(0,w)",
+      "U[\\mathbf r]-U[\\mathbf r_*]=\\int_0^L\\mathbf Q_*^\\prime\\cdot(\\mathbf r-\\mathbf r_*)\\,ds",
+      "=\\int_0^L T_*(s)\\left[1-\\mathbf t_*(s)\\cdot\\mathbf r^\\prime(s)\\right]ds\\ \\geq\\ 0"
+    ],
+    "chart": null,
+    "notes": "证明比较类包括非图像、回折以及自交曲线。因T*>0，积分等号要求t*·r′=1，而单位向量的点积达到1仅当相同。甚至在放宽约束|r′|≤1的凸类上同一证明也成立。因此此候选是原可行类的唯一全局极小曲线，不依赖E-L条件的充分性猜测。",
+    "kind": "standard",
+    "table": null
+  },
+  {
+    "title": "局部稳定性也可由能量证书读出",
+    "lead": "取任意光滑、严格保持长度和端点的曲线族 rε",
+    "texts": [
+      "非零端点固定扰动 h 使二阶项严格为正",
+      "这一结论针对可行曲线族，不能任意丢弃约束",
+      "它证明静态稳定性，动力学松弛还需要耗散机制"
+    ],
+    "eqs": [
+      "\\mathbf r_\\varepsilon=\\mathbf r_*+\\varepsilon\\mathbf h+O(\\varepsilon^2),\\qquad \\mathbf t_*\\cdot\\mathbf h^\\prime=0",
+      "U[\\mathbf r_\\varepsilon]-U[\\mathbf r_*]=\\frac{\\varepsilon^2}{2}\\int_0^L T_*|\\mathbf h^\\prime|^2\\,ds+o(\\varepsilon^2)"
+    ],
+    "chart": null,
+    "notes": "由于两个单位向量之间有1-t*·rε′=|rε′-t*|²/2，这是精确恒等式。将rε′-t*=εh′+O(ε²)代入全局证书即可。h在端点为零，若h′=0则h=0。",
+    "kind": "standard",
+    "table": null
+  },
+  {
+    "title": "Beltrami identity 简化了什么",
+    "lead": "被积函数 F=(wy+λ)√(1+y′²) 不显含 x",
+    "texts": [
+      "直接得到一阶积分，与普通降阶法一致",
+      "该常量来自 x 平移不显含性，可解释为水平内力",
+      "F 显含 y，因此 Fᵧ′ 不是常量"
+    ],
+    "eqs": [
+      "\\frac d{dx}(F-y^\\prime F_{y^\\prime})=F_x=0",
+      "F-y^\\prime F_{y^\\prime}=\\frac{wy+\\lambda}{\\sqrt{1+y^{\\prime 2}}}=C",
+      "C=wa=H,\\qquad y+\\lambda/w=a\\sqrt{1+y^{\\prime 2}}"
+    ],
+    "chart": null,
+    "notes": "沿E-L解，d(F-pF_p)/dx=F_x+p(F_y-dF_p/dx)=F_x。F_x=0只指显式偏导。这里把Beltrami作为已完成普通微分方程推导后的结构性复核。",
+    "kind": "standard",
+    "table": null
+  },
+  {
+    "title": "数值实验参数与算法",
+    "lead": "一根跨越 10 m、高差 2 m 的 12 m 均匀重绳",
+    "texts": [],
+    "eqs": [],
+    "chart": null,
+    "notes": "完整实现及版本号见research.py与results.json。布伦特法xtol=5e-15，初始正根区间[1e-7,15]。射击法初值H=40N,V0=-40N，使用log H保证H>0。所有图像来自实际程序输出，未使用生成式图像代替计算。",
+    "kind": "standard",
+    "table": [
+      [
+        "参数 / 算法",
+        "采用值 / 设置"
+      ],
+      [
+        "端点 A、B",
+        "(0,0) m、(10,2) m"
+      ],
+      [
+        "L、ρ、g",
+        "12 m、0.8 kg/m、9.81 m/s²"
+      ],
+      [
+        "几何可行性",
+        "端点距离 10.198039 m < L"
+      ],
+      [
+        "解析常数求解",
+        "Brent 法，解 sinh(u)/u=√(L²−Δ²)/D"
+      ],
+      [
+        "独立受力射击",
+        "solve_ivp + root，rtol=2×10⁻¹²"
+      ],
+      [
+        "离散能量最小化",
+        "SLSQP，20 / 40 / 80 等长链节"
+      ],
+      [
+        "图表生成",
+        "Python 3.12、NumPy、SciPy、Matplotlib"
+      ]
+    ]
+  },
+  {
+    "title": "解析曲线与独立射击解重合",
+    "lead": "最低点位于 x=4.176531 m，y=−1.892629 m",
+    "texts": [
+      "a=4.894719 m",
+      "c=−6.787349 m",
+      "H=38.413757 N",
+      "两种方法最大位置差 5.69×10⁻¹¹ m"
+    ],
+    "eqs": [],
+    "chart": "shape",
+    "notes": "射击法未知量H,V0满足r′=(H,V0+ws)/sqrt(H²+(V0+ws)²)，以两端坐标闭合。结果H=38.41375670498078N,V0=-36.90214798543809N。",
+    "kind": "standard",
+    "table": null
+  },
+  {
+    "title": "水平张力恒定，总张力随高度增加",
+    "lead": "最低点处总张力最小，两端支持力共同平衡整绳重量",
+    "texts": [
+      "T(A)=53.267112 N",
+      "T(B)=68.963112 N",
+      "V(B)−V(A)=94.176 N",
+      "整绳重量 wL=94.176 N"
+    ],
+    "eqs": [],
+    "chart": "tension",
+    "notes": "A端支持力=(-H,-V0)，B端支持力=(H,V0+wL)。水平合力为0，竖直支持力和为wL。V是沿A到B方向定义的有符号内力分量。",
+    "kind": "standard",
+    "table": null
+  },
+  {
+    "title": "数值残差与独立验证结果",
+    "lead": "解析代回、数值积分和受力射击分别检验不同环节",
+    "texts": [],
+    "eqs": [],
+    "chart": null,
+    "notes": "显示0仅表示当前双精度运算返回0，不意味着可无限精度认证。E-L残差采用(wy+λ)y″-w(1+y′²)，量纲N/m。解析和射击曲线的差不是实验测量误差。",
+    "kind": "standard",
+    "table": [
+      [
+        "检查量",
+        "实际结果",
+        "说明"
+      ],
+      [
+        "端点最大残差",
+        "0.0 m",
+        "双精度下抵消为零"
+      ],
+      [
+        "弧长积分残差",
+        "0.0 m",
+        "自适应数值积分"
+      ],
+      [
+        "Euler–Lagrange 残差",
+        "1.07×10⁻¹⁴ N/m",
+        "801 个采样点"
+      ],
+      [
+        "射击终点最大残差",
+        "5.33×10⁻¹⁵ m",
+        "由受力 ODE 独立求解"
+      ],
+      [
+        "射击曲线最大位置差",
+        "5.69×10⁻¹¹ m",
+        "501 个弧长采样点"
+      ],
+      [
+        "总势能 U",
+        "−70.260037 J",
+        "零点设在左端高度"
+      ]
+    ]
+  },
+  {
+    "title": "离散绳链能量优化与网格收敛",
+    "lead": "每个链节严格固定长度，势能用均匀直链节的精确积分",
+    "texts": [
+      "20 段：位置误差 3.635 mm",
+      "40 段：位置误差 0.909 mm",
+      "80 段：位置误差 0.227 mm",
+      "误差比例约 4，观察到二阶收敛"
+    ],
+    "eqs": [],
+    "chart": "convergence",
+    "notes": "变量是内部节点二维坐标。每个相邻节点距离等于L/N。目标w(L/N)[(y0+yN)/2+sum内部y]。初始曲线在连续解上加入0.15sin(πs/L)的竖直扰动，避免把解析节点当成最终优化结果。优化分别迭代26、46、164次，均成功。最大节点误差按相同材料弧长节点比较，不是垂直误差。",
+    "kind": "standard",
+    "table": null
+  },
+  {
+    "title": "离散计算的可复核记录",
+    "lead": "约束残差与能量误差同时检查，收敛结论保持有限样本边界",
+    "texts": [
+      "离散势能从上方趋近连续势能 −70.260037 J",
+      "SLSQP 数值收敛是计算证据，全局最小性仍由解析证书保证"
+    ],
+    "eqs": [],
+    "chart": null,
+    "notes": "KKT无穷范数残差分别约9.59e-7、2.16e-6、3.69e-7，受优化停止准则和线性最小二乘影响。三组网格观察到二阶趋势，但不能据此宣称已证明任意网格的理论收敛阶。",
+    "kind": "standard",
+    "table": [
+      [
+        "链节数 N",
+        "最大位置误差 / m",
+        "势能误差 / J",
+        "链长最大残差 / m"
+      ],
+      [
+        "20",
+        "3.635×10⁻³",
+        "1.794×10⁻¹",
+        "6.16×10⁻¹³"
+      ],
+      [
+        "40",
+        "9.093×10⁻⁴",
+        "4.483×10⁻²",
+        "3.25×10⁻¹⁴"
+      ],
+      [
+        "80",
+        "2.273×10⁻⁴",
+        "1.121×10⁻²",
+        "4.08×10⁻¹⁴"
+      ]
+    ]
+  },
+  {
+    "title": "长度敏感性与近直线极限",
+    "lead": "固定两端时，绳长越接近直线距离，水平张力越大",
+    "texts": [
+      "L 接近端点距离时，H 趋于无穷",
+      "增加绳长使下垂增加，水平张力减小",
+      "ρ 或 g 仅按比例改变张力，几何形状由端点和 L 决定"
+    ],
+    "eqs": [],
+    "chart": "sensitivity",
+    "notes": "取L从d+0.02到16m共100组真实求根结果。因为sinh(u)/u单调，L增大导致u增大、a减小。近d时L²-d²≈D⁴/(12a²)，故a≈D²/sqrt[12(L²-d²)]。ρ,g为正且均匀时仅影响势能和张力量级。",
+    "kind": "standard",
+    "table": null
+  },
+  {
+    "title": "为什么常见的抛物线只是近似",
+    "lead": "双曲余弦在最低点附近的 Taylor 展开给出局部抛物线",
+    "texts": [
+      "需要 |x−x₀|/a≪1，不能只凭外观判断",
+      "无量纲偏移 0.5：相对下垂误差约 2.06%",
+      "无量纲偏移 1.0：相对下垂误差约 7.93%",
+      "按水平距离均匀加载的柔索满足 Hy″=常量，才精确为抛物线"
+    ],
+    "eqs": [
+      "y-y_{\\min}=a\\left[\\cosh\\!\\left(\\frac{x-x_0}{a}\\right)-1\\right]",
+      "=\\frac{(x-x_0)^2}{2a}+\\frac{(x-x_0)^4}{24a^3}+O\\!\\left(\\frac{(x-x_0)^6}{a^5}\\right)"
+    ],
+    "chart": null,
+    "notes": "相对下垂误差定义为[cosh(z)-1-z²/2]/[cosh(z)-1]。数值由程序计算。实际绳索自重按ds均匀，而不是按dx均匀，因而荷载密度对x是w sqrt(1+y′²)。",
+    "kind": "standard",
+    "table": null
+  },
+  {
+    "title": "研究结论与交付边界",
+    "lead": "解析、物理与数值结果在同一组边界条件下相互吻合",
+    "texts": [
+      "严格推出 y=a cosh((x−x₀)/a)+c，给出一般端点定常数方法",
+      "证明 L>d 时正张力解存在唯一，并给出全局势能最小证书",
+      "独立受力射击误差约 5.69×10⁻¹¹ m，离散绳链呈约二阶收敛",
+      "计算适用于理想均匀柔绳，不包含伸长、弯曲刚度、接触或动态松弛"
+    ],
+    "eqs": [],
+    "chart": null,
+    "notes": "正文、示意图、流程图和表格是可编辑对象。复杂数学公式及科学图表为程序生成的独立高清图，可用随附源代码和LaTeX重新生成。未使用Microsoft PowerPoint桌面实测，不将渲染检查等同于所有Office版本兼容验证。",
+    "kind": "standard",
+    "table": null
+  },
+  {
+    "title": "复现入口与核心算法",
+    "lead": "输入、完整代码、原始数据和误差记录一并保留",
+    "texts": [
+      "research.py：求根、受力射击、等长链节优化与绘图",
+      "results.json / curve.csv：完整精度结果与曲线采样",
+      "content.py / deck.mjs：中文内容、公式源与 PPTX 制作",
+      "README.md：物理假设、证明及一条命令的复现方式"
+    ],
+    "eqs": [
+      "u=\\operatorname{root}\\!\\left(\\sinh(u)/u-\\sqrt{L^2-\\Delta^2}/D\\right)",
+      "\\mathbf r^\\prime(s)=\\frac{(H,V_0+ws)}{\\sqrt{H^2+(V_0+ws)^2}}"
+    ],
+    "chart": null,
+    "notes": "运行方式：python research.py，需numpy scipy matplotlib。构建PPTX使用当前Artifact Tool运行环境。为便于审查，所有图表及公式均保留为独立资源。",
+    "kind": "standard",
+    "table": null
+  }
+]

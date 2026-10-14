@@ -1,0 +1,78 @@
+{
+  "parameters": {
+    "D_m": 10.0,
+    "dy_m": 2.0,
+    "L_m": 12.0,
+    "rho_kg_per_m": 0.8,
+    "g_m_per_s2": 9.81,
+    "w_N_per_m": 7.848000000000001
+  },
+  "a_m": 4.894719253946406,
+  "x0_m": 4.176531432495869,
+  "c_m": -6.787348634985433,
+  "lowest_y_m": -1.8926293810390264,
+  "H_N": 38.4137567049714,
+  "V0_N": -36.90214798543906,
+  "V_end_N": 57.27385201456096,
+  "T_left_N": 53.26711208736568,
+  "T_right_N": 68.96311208736567,
+  "lambda_N": 53.26711208736568,
+  "U_J": -70.26003698477611,
+  "arc_length_m": 12.0,
+  "arc_length_residual_m": 0.0,
+  "boundary_residual_m": 0.0,
+  "EL_residual": 1.0658141036401503e-14,
+  "force_residual_N": 0.0,
+  "shooting": {
+    "success": true,
+    "H_N": 38.41375670498078,
+    "V0_N": -36.90214798543809,
+    "endpoint_residual_m": 5.329070518200751e-15,
+    "max_position_error_m": 5.690029228490188e-11
+  },
+  "mesh_convergence": [
+    {
+      "N": 20,
+      "success": true,
+      "iterations": 26,
+      "max_position_error_m": 0.003634952859935411,
+      "max_link_length_error_m": 6.157296894571118e-13,
+      "potential_J": -70.08064464178153,
+      "abs_potential_error_J": 0.17939234299457496,
+      "kkt_residual": 9.586263471916823e-07
+    },
+    {
+      "N": 40,
+      "success": true,
+      "iterations": 46,
+      "max_position_error_m": 0.0009093427168803326,
+      "max_link_length_error_m": 3.2529534621517087e-14,
+      "potential_J": -70.21520246845363,
+      "abs_potential_error_J": 0.04483451632248148,
+      "kkt_residual": 2.161680216440169e-06
+    },
+    {
+      "N": 80,
+      "success": true,
+      "iterations": 164,
+      "max_position_error_m": 0.0002272911974256588,
+      "max_link_length_error_m": 4.08006961549745e-14,
+      "potential_J": -70.24882920413415,
+      "abs_potential_error_J": 0.011207780641953491,
+      "kkt_residual": 3.689819467744826e-07
+    }
+  ],
+  "environment": {
+    "python": "3.12.14",
+    "numpy": "2.3.5",
+    "scipy": "1.17.0",
+    "matplotlib": "3.10.8"
+  },
+  "parabola_relative_sag_errors": {
+    "0.1": 0.0008329168319335389,
+    "0.25": 0.005192097570709708,
+    "0.5": 0.020575477741808346,
+    "1.0": 0.07932640579220762,
+    "1.5": 0.16815143332321314
+  }
+}
