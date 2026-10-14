@@ -1,0 +1,1796 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+2026 年新课标全国Ⅰ卷 数学第 19 题（压轴题）· 完整代码（单文件版）
+================================================================================
+本文件把整套流程合并为一个可直接运行、无本地模块依赖的脚本，共三件事：
+
+    第 1 部分  数值/逻辑复核   —— 四组实验检验第 (1)(2)(3) 问的结论（numpy）
+    第 2 部分  插图与公式排版   —— matplotlib 生成 4 张插图；公式渲染为透明 PNG
+    第 3 部分  PPT 生成         —— python-pptx 生成 19 页 16:9 的 ai_agent_demo.pptx，
+                                  同时用 Pillow 渲染 PNG 预览以自动检查排版
+
+用法
+    python 2026全国I卷19题_完整代码.py
+输出
+    ./ai_agent_demo.pptx                 最终课件
+    ./assets/verify_report.json          数值复核报告
+    ./assets/figures/*.png               插图
+    ./assets/formulas/*.png              公式 PNG（缓存）
+    ./assets/preview/slide_*.png         逐页预览（用于排版自检）
+
+依赖
+    python-pptx, matplotlib, pillow, numpy
+    中文字体（可选但推荐）：assets/fonts/SourceHanSansSC-{Regular,Bold}.otf
+    若找不到中文字体，脚本会自动回退到系统中文字体；仍找不到时仅预览/插图的中文会退化为方块，
+    但 ai_agent_demo.pptx 本身不受影响（PPT 里的中文由 PowerPoint 用“微软雅黑”渲染）。
+
+题目（2026 年普通高等学校招生全国统一考试 · 新高考全国Ⅰ卷 · 第 19 题，17 分）
+    已知 f(x) 定义域为 R，且当 x<0 时 f(x)=2^x；对任意 x0∈R，
+        D(x0) = { d∈R | f(x0+d) > f(x0) }.
+    (1) 若 x≥0 时 f(x)=1-x，求 D(-1)；
+    (2) 若 f 是奇函数，f(x1)≤f(x2) 且 x1*x2≠0，证明 D(x2)⊆D(x1)；
+    (3) 设 f 满足 ① f(x1)≤f(x2) ⇒ D(x2)⊆D(x1)；② 0<x<1 ⇒ f(x)<f(0)。
+        证明 (i) f(0)≥1；(ii) f 在 (0,+∞) 上单调递增。
+
+结论速览
+    (1) D(-1) = (0, 3/2)；
+    (2) f(x)=2^x (x<0), f(0)=0, f(x)=-2^(-x) (x>0)；
+        D(x0)=(0,-x0) (x0<0), D(0)=(-∞,0), D(x0)=(-∞,-x0]∪(0,+∞) (x0>0)，分类讨论即得；
+    (3) (i) 反证 + 一次条件①；(ii) 先证 (0,1) 上 f≤0，再平移构造证 (0,+∞) 上 f≤0，
+        最后由 D(u)=(0,-u] 与①得 (0,+∞)⊆D(v)，收口为严格递增。
+    加强结论（完整刻画）：f 满足 ①② ⇔ f(0)≥1 且 f 在 (0,+∞) 上取值非正、严格递增。
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import math
+import os
+import tempfile
+
+# matplotlib 需要可写缓存目录（某些环境 HOME 不可写）
+os.environ.setdefault("MPLCONFIGDIR", os.path.join(tempfile.gettempdir(), "mplconfig"))
+
+import numpy as np                                                  # noqa: E402
+import matplotlib                                                   # noqa: E402
+matplotlib.use("Agg")
+matplotlib.rcParams["mathtext.fontset"] = "cm"                       # Computer Modern 数学字体
+import matplotlib.pyplot as plt                                      # noqa: E402
+from matplotlib.font_manager import FontProperties                   # noqa: E402
+from matplotlib.patches import FancyArrowPatch                       # noqa: E402
+from PIL import Image, ImageDraw, ImageFont                          # noqa: E402
+from pptx import Presentation                                        # noqa: E402
+from pptx.util import Inches, Pt, Emu                                # noqa: E402
+from pptx.dml.color import RGBColor                                  # noqa: E402
+from pptx.enum.text import PP_ALIGN, MSO_ANCHOR                      # noqa: E402
+from pptx.enum.shapes import MSO_SHAPE                               # noqa: E402
+from pptx.oxml.ns import qn                                          # noqa: E402
+
+
+# ==============================================================================
+# 第 0 部分  路径与字体
+# ==============================================================================
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+def _resolve_root():
+    """优先选择“含 assets 目录”的那一级作为工作根目录。"""
+    for cand in (SCRIPT_DIR, os.path.join(SCRIPT_DIR, ".."), os.getcwd()):
+        cand = os.path.abspath(cand)
+        if os.path.isdir(os.path.join(cand, "assets")):
+            return cand
+    return SCRIPT_DIR
+
+
+ROOT = _resolve_root()
+ASSETS = os.path.join(ROOT, "assets")
+FIG = os.path.join(ASSETS, "figures")
+FORMULA_DIR = os.path.join(ASSETS, "formulas")
+PREVIEW_DIR = os.path.join(ASSETS, "preview")
+REPORT_JSON = os.path.join(ASSETS, "verify_report.json")
+PPTX_OUT = os.path.join(ROOT, "ai_agent_demo.pptx")
+for _d in (ASSETS, FIG, FORMULA_DIR, PREVIEW_DIR):
+    os.makedirs(_d, exist_ok=True)
+
+
+def _resolve_fonts():
+    """找一个可用的中文字体（常规 + 粗体），找不到返回 (None, None)。"""
+    reg = [os.path.join(ROOT, "assets", "fonts", "SourceHanSansSC-Regular.otf"),
+           os.path.join(SCRIPT_DIR, "assets", "fonts", "SourceHanSansSC-Regular.otf"),
+           "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+           "/usr/share/fonts/opentype/noto/NotoSansCJKsc-Regular.otf",
+           "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
+           "C:/Windows/Fonts/msyh.ttc", "C:/Windows/Fonts/simhei.ttf",
+           "/System/Library/Fonts/PingFang.ttc"]
+    bold = [os.path.join(ROOT, "assets", "fonts", "SourceHanSansSC-Bold.otf"),
+            os.path.join(SCRIPT_DIR, "assets", "fonts", "SourceHanSansSC-Bold.otf"),
+            "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
+            "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
+            "C:/Windows/Fonts/msyhbd.ttc", "C:/Windows/Fonts/simhei.ttf",
+            "/System/Library/Fonts/PingFang.ttc"]
+    r = next((p for p in reg if os.path.exists(p)), None)
+    b = next((p for p in bold if os.path.exists(p)), None)
+    return r, b
+
+
+TTF_R, TTF_B = _resolve_fonts()
+
+# ---- 画布与 pptx 端字体 ----
+SW, SH = 13.3333, 7.5
+CN_FONT = "微软雅黑"
+MATH_FONT = "Cambria Math"
+
+
+# ==============================================================================
+# 第 1 部分  数值/逻辑复核（对应 code/verify_solution.py）
+# ==============================================================================
+TOL = 1e-9
+REPORT: dict = {}
+
+
+# ----------------------------------------------------------------------
+# 工具
+# ----------------------------------------------------------------------
+def piecewise(neg, pos=None, zero=None):
+    """构造 R→R 的向量化函数: x<0 用 neg(x), x>0 用 pos(x), x=0 用 zero。"""
+    def f(x):
+        x = np.asarray(x, dtype=float)
+        out = np.empty_like(x)
+        m = x < 0
+        with np.errstate(divide="ignore", invalid="ignore", over="ignore"):
+            out[m] = neg(x[m])
+            if pos is None:
+                out[~m] = zero
+            else:
+                out[~m] = pos(x[~m])
+        if zero is not None:
+            out[x == 0] = zero
+        return out
+    return f
+
+
+def axiom1_violations(f, xs, ds, tol=TOL):
+    """在网格上找出所有违反条件①的 (u,v,d)：f(u)≤f(v) 且 f(v+d)>f(v) 但 f(u+d)≤f(u)。"""
+    A = f(xs[None, :] + ds[:, None])          # A[k,i] = f(xs[i]+ds[k])
+    B = f(xs)                                  # B[i]   = f(xs[i])
+    viol = (A[:, :, None] <= B[None, :, None] + tol) & \
+           (A[:, None, :] > B[None, None, :] + tol)
+    cond = (B[:, None] <= B[None, :] + tol)    # cond[i,j] : f(xs[i]) ≤ f(xs[j])
+    viol = viol & cond[None, :, :]
+    return np.argwhere(viol), xs, ds
+
+
+def check_axiom1(f, xs, ds, tol=TOL):
+    idx, xs_, ds_ = axiom1_violations(f, xs, ds, tol)
+    if idx.size == 0:
+        return True, None
+    k, i, j = idx[0]
+    return False, (float(xs_[i]), float(xs_[j]), float(ds_[k]))
+
+
+def strict_increasing(f, xs, tol=1e-9):
+    return bool(np.all(np.diff(f(xs)) > tol))
+
+
+def D_set(f, x0, ds, tol=TOL):
+    """D(x0) 在 d 网格上的数值集合（布尔掩码）。"""
+    return f(x0 + ds) > f(np.array([x0]))[0] + tol
+
+
+# ----------------------------------------------------------------------
+# 实验 1: 第(1)问
+# ----------------------------------------------------------------------
+def experiment_1():
+    f = piecewise(neg=lambda x: 2.0 ** x, pos=lambda x: 1.0 - x)
+    x0 = -1.0
+    analytic = (0.0, 1.5)
+    step = 1e-5
+    d = np.arange(-2.0, 2.5 + step, step)
+    inside = D_set(f, x0, d)
+    num = (float(d[inside].min()), float(d[inside].max()))
+    ok = abs(num[0] - analytic[0]) < 1e-3 and abs(num[1] - analytic[1]) < 1e-3
+    fm1 = float(f(np.array([-1.0]))[0])
+    REPORT["exp1"] = dict(
+        f="f(x)=2^x (x<0), f(x)=1-x (x>=0), 求 D(-1)",
+        scan_step=step, f_at_minus1=fm1,
+        analytic=list(analytic), numeric=[round(v, 5) for v in num], match=bool(ok),
+        d_1_in_D=bool(f(np.array([x0 + 1.0]))[0] > fm1 + TOL),
+        d_1_5_in_D=bool(f(np.array([x0 + 1.5]))[0] > fm1 + TOL),
+    )
+    print("[实验1] 第(1)问  D(-1)")
+    print("        f(-1) = 2^(-1) = %.4f" % fm1)
+    print("        解析 (0, 3/2)   |   1e-5 步长扫描 (%.5f, %.5f)   一致=%s"
+          % (num[0], num[1], ok))
+    print("        端点辨析: d=1 (f(0)=1>1/2) 属于 D(-1)? %s ; "
+          "d=3/2 (f(1/2)=1/2 取不到) 属于 D(-1)? %s"
+          % (REPORT["exp1"]["d_1_in_D"], REPORT["exp1"]["d_1_5_in_D"]))
+
+
+# ----------------------------------------------------------------------
+# 实验 2: 第(2)问
+# ----------------------------------------------------------------------
+def D_pred(x0, d):
+    """奇函数延拓下 D(x0) 的解析表达式（分段）。"""
+    d = np.asarray(d, dtype=float)
+    if x0 < 0:
+        return (d > 0) & (d < -x0)
+    if x0 == 0:
+        return d < 0
+    return (d <= -x0) | (d > 0)
+
+
+def experiment_2():
+    f = piecewise(neg=lambda x: 2.0 ** x, pos=lambda x: -(2.0 ** (-x)), zero=0.0)
+    # 分段单调性
+    inc_neg = strict_increasing(f, np.linspace(-4, -1e-6, 400))
+    inc_pos = strict_increasing(f, np.linspace(1e-6, 4, 400))
+    glob = strict_increasing(f, np.linspace(-4, 4, 801))
+    witness = None
+    if not glob:
+        a, b = -0.5, 0.5
+        witness = [a, round(float(f(np.array([a]))[0]), 4),
+                   b, round(float(f(np.array([b]))[0]), 4)]
+
+    # 三段 D(x0) 表达式检验
+    ds = np.linspace(-6, 6, 2401)
+    samples = []
+    for x0 in (-2.0, -1.0, -0.5, 0.0, 0.5, 1.0, 2.0):
+        pred = D_pred(x0, ds)
+        act = D_set(f, x0, ds)
+        diff = int(np.sum(pred != act))
+        samples.append(dict(x0=x0, mismatch=diff,
+                            interval=("(0,%.1f)" % (-x0)) if x0 < 0 else
+                                     ("(-inf,0)") if x0 == 0 else
+                                     ("(-inf,%.1f] ∪ (0,+inf)" % (-x0))))
+    # (2) 的包含关系：网格上检验 f(x1)≤f(x2) 且 x1x2≠0 ⇒ D(x2)⊆D(x1)
+    xs = np.linspace(-4, 4, 321)
+    xs = xs[np.abs(xs) > 1e-9]
+    A = f(xs[None, :] + ds[:, None])
+    B = f(xs)
+    # 违反: ∃d: f(x2+d)>f(x2) 且 f(x1+d)≤f(x1)  【注意: 上三角判定在下方 cond 中给出】
+    viol = (A[:, :, None] <= B[None, :, None] + TOL) & \
+           (A[:, None, :] > B[None, None, :] + TOL)
+    cond = (B[:, None] <= B[None, :] + TOL)
+    bad_inclusion = int(np.count_nonzero(np.any(viol & cond[None, :, :], axis=0)))
+    # 必要性: 若允许 x2=0, x1>0, 则前提成立但包含关系失败
+    x1 = 1.0
+    need = D_pred(0.0, ds) & ~D_pred(x1, ds)
+    ness = dict(x1=x1, x2=0.0, witness_d=float(ds[np.argmax(need)]),
+                f_x1=round(float(f(np.array([x1]))[0]), 4), f_x2=0.0,
+                violation_count=int(np.count_nonzero(need)))
+
+    REPORT["exp2"] = dict(increasing_on_negative=inc_neg, increasing_on_positive=inc_pos,
+                          increasing_on_R=glob, non_monotone_witness=witness,
+                          D_samples=samples, inclusion_violations=bad_inclusion,
+                          necessity_of_nonzero=ness)
+    print("[实验2] 第(2)问  奇函数延拓  f(x)=2^x (x<0), f(0)=0, f(x)=-2^(-x) (x>0)")
+    print("        在 (-∞,0) 上严格递增=%s ; 在 (0,+∞) 上严格递增=%s ; 在 R 上严格递增=%s"
+          % (inc_neg, inc_pos, glob))
+    print("        非单调见证: f(%.1f)=%.4f > f(%.1f)=%.4f" % tuple(witness))
+    for s in samples:
+        print("        x0=%4.1f :  D(x0)=%-22s  与解析式在 2401 个格点上不符点=%d"
+              % (s["x0"], s["interval"], s["mismatch"]))
+    print("        包含关系检验: 321×2401 网格上“f(x1)≤f(x2) 且 x1x2≠0”的违例数 = %d" % bad_inclusion)
+    print("        条件 x1x2≠0 的必要性: 取 x1=%.1f, x2=0, 前提 f(%.1f)<f(0) 成立,"
+          " 但 D(0)⊄D(%.1f) (反例 d=%.3f)" % (x1, x1, x1, ness["witness_d"]))
+
+
+# ----------------------------------------------------------------------
+# 实验 3: 条件①是筛子
+# ----------------------------------------------------------------------
+def experiment_3():
+    xs = np.linspace(-3.0, 4.0, 176)
+    ds = np.linspace(-3.0, 4.0, 176)
+    candidates = {
+        "f(x)=1-x (x≥0)": piecewise(neg=lambda x: 2.0 ** x, pos=lambda x: 1.0 - x, zero=1.0),
+        "f(x)=2^x-1 (x≥0)": piecewise(neg=lambda x: 2.0 ** x, pos=lambda x: 2.0 ** x - 1.0, zero=1.0),
+        "f(x)=-x (x≥0)": piecewise(neg=lambda x: 2.0 ** x, pos=lambda x: -x, zero=1.0),
+        "f(x)=-1/x (x>0)": piecewise(neg=lambda x: 2.0 ** x, pos=lambda x: -1.0 / x, zero=1.0),
+    }
+    rows = []
+    pos = np.linspace(0.05, 4, 200)
+    for name, f in candidates.items():
+        passed, witness = check_axiom1(f, xs, ds)
+        rows.append(dict(name=name, passes=bool(passed),
+                         witness=None if passed else [round(t, 3) for t in witness],
+                         f_le_0=bool(np.all(f(pos) <= 1e-9)),
+                         increasing=bool(strict_increasing(f, pos))))
+    REPORT["exp3"] = dict(grid=[float(xs[0]), float(xs[-1]), len(xs)], rows=rows)
+    print("[实验3] 条件①的筛子作用（%d×%d 网格）" % (len(xs), len(ds)))
+    for r in rows:
+        tag = "通过 ①" if r["passes"] else "违反 ①  反例 (u,v,d)=%s" % (r["witness"],)
+        print("        %-18s %-40s (0,∞)上 f≤0:%-5s 严格递增:%-5s"
+              % (r["name"], tag, r["f_le_0"], r["increasing"]))
+
+
+# ----------------------------------------------------------------------
+# 实验 4: "完整刻画"的双向检验 + 证明引导的反例构造器
+# ----------------------------------------------------------------------
+def guided_witness(f, tol=TOL):
+    """按 (3)(i)/(3)(ii) 证明中的构造，直接给出条件①的反例。
+
+    情形 A: x1∈(0,1), f(x1)>0  →  (u,v,d) = (a, x1, -x1),  a<0 且 2^a<f(x1)
+    情形 B: x1≥1,     f(x1)>0  →  (u,v,d) = (m-x1+1/2, m, x1-m),  m<0 且 2^m<f(x1)
+    情形 C: f(0)<1             →  (u,v,d) = (0, p, -p/2),  p<0 且 2^p>f(0)
+    返回 (u,v,d) 若该三元组确实是①的反例, 否则 None。
+    """
+    def is_violation(u, v, d):
+        fu, fv = float(f(np.array([u]))[0]), float(f(np.array([v]))[0])
+        fvd, fud = float(f(np.array([v + d]))[0]), float(f(np.array([u + d]))[0])
+        return (fu <= fv + tol) and (fvd > fv + tol) and (fud <= fu + tol)
+
+    f0 = float(f(np.array([0.0]))[0])
+    # 情形 C
+    if f0 < 1.0:
+        p = max(-0.9, math.log2(max(f0, 1e-12)) + 0.1)
+        p = min(p, -1e-3)
+        if float(f(np.array([p]))[0]) > f0 and is_violation(0.0, p, -p / 2.0):
+            return (0.0, p, -p / 2.0)
+    # 情形 A / B
+    for x1 in np.linspace(1e-3, 4.0, 4001):
+        fx1 = float(f(np.array([x1]))[0])
+        if fx1 <= 0:
+            continue
+        m = min(-0.5, math.log2(max(fx1, 1e-12)) - 0.5)
+        if x1 < 1.0:
+            a = min(-0.5, math.log2(max(fx1, 1e-12)) - 0.5)
+            if is_violation(a, x1, -x1):
+                return (a, x1, -x1)
+        else:
+            n = m - x1 + 0.5
+            if is_violation(n, m, x1 - m):
+                return (n, m, x1 - m)
+    return None
+
+
+def experiment_4(n_valid=300, n_perturb=300, n_random=3000, seed=20260607):
+    rng = np.random.default_rng(seed)
+    # 右半轴结点从 0.05 开始, 与 x=0 处的 f(0)≥1 隔开, 这样才可能做到 (0,+∞) 上恒 ≤0
+    knots = np.array([0.05, 0.2, 0.4, 0.6, 0.8, 1.0, 1.5, 2.0, 3.0])
+    xs = np.linspace(-3.0, 4.0, 201)
+    ds = np.linspace(-3.0, 4.0, 201)
+    x01 = np.linspace(1e-3, 1 - 1e-3, 120)
+
+    def build(vals, zero):
+        def f(x):
+            x = np.asarray(x, dtype=float)
+            out = np.empty_like(x)
+            m = x < 0
+            out[m] = 2.0 ** x[m]
+            pos = ~m
+            xp = x[pos]
+            yp = np.interp(xp, knots, vals)
+            # 左端 (0, knots[0]) 与右端 (knots[-1], ∞) 做单调延拓,
+            # 保证整个 (0,+∞) 上严格递增且恒为负
+            left = (xp > 0) & (xp < knots[0])
+            yp[left] = vals[0] - 0.5 * (knots[0] - xp[left])
+            right = xp > knots[-1]
+            A = -vals[-1]
+            yp[right] = -A * np.exp(-(xp[right] - knots[-1]))
+            out[pos] = yp
+            out[x == 0] = zero
+            return out
+        return f
+
+    def cond2_ok(f):
+        return bool(np.all(f(x01) < float(f(np.array([0.0]))[0])))
+
+    def sample_valid():
+        """允许族: f(0)∈[1,2], (0,+∞) 上严格递增且恒为负。"""
+        c = 1.0 + rng.random()
+        vals = np.empty_like(knots)
+        cur = -rng.uniform(0.2, 3.0)
+        vals[0] = cur
+        for i in range(1, len(knots)):
+            cur = cur + rng.uniform(0.02, 0.8) * (knots[i] - knots[i - 1])
+            cur = min(cur, -1e-4)
+            cur = max(cur, vals[i - 1] + 1e-5)
+            vals[i] = cur
+        return c, vals
+
+    # (a) 允许族 → ① 与 ② 都应成立
+    ok_a2 = 0
+    fail_example = None
+    for _ in range(n_valid):
+        c, vals = sample_valid()
+        f = build(vals, c)
+        p1, w = check_axiom1(f, xs, ds)
+        if p1 and cond2_ok(f):
+            ok_a2 += 1
+        elif fail_example is None:
+            fail_example = w
+
+    # (b) 定向扰动 → ① 必须被抓住（网格 or 证明引导的构造）
+    stat = {"positive_bump": [0, 0], "decrease": [0, 0], "small_f0": [0, 0]}
+    escaped = []
+    for kind in ("positive_bump", "decrease", "small_f0"):
+        for _ in range(n_perturb):
+            c, vals = sample_valid()
+            if kind == "positive_bump":
+                i = int(rng.integers(5, len(knots)))          # x ≥ 1 处抬成正値
+                vals[i] = abs(vals[i]) + rng.uniform(0.2, 2.0)
+            elif kind == "decrease":
+                i = int(rng.integers(1, len(knots)))          # 制造下降段
+                vals[i] = vals[i - 1] - rng.uniform(0.2, 2.0)
+            else:
+                c = rng.uniform(0.05, 0.95)                   # f(0) < 1
+            f = build(vals, c)
+            p1, w = check_axiom1(f, xs, ds)
+            if not p1:
+                stat[kind][0] += 1
+            elif guided_witness(f) is not None:
+                stat[kind][1] += 1
+            else:
+                escaped.append(kind)
+
+    # (c) 纯随机候选中有多少同时通过 ① 与 ②
+    passed_random = 0
+    for _ in range(n_random):
+        c = 1.0 + rng.random()
+        vals = np.empty_like(knots)
+        vals[0] = c
+        vals[1:] = rng.uniform(-3.0, 3.0, size=len(knots) - 1)
+        f = build(vals, c)
+        if not cond2_ok(f):
+            continue
+        p1, _ = check_axiom1(f, xs, ds)
+        if p1:
+            passed_random += 1
+
+    REPORT["exp4"] = dict(
+        grid=[len(xs), len(ds)], n_valid=n_valid, n_perturb_each=n_perturb,
+        n_random=n_random, seed=seed,
+        valid_family_both_ok=ok_a2, valid_family_example_failure=fail_example,
+        perturbed=stat, escaped=escaped, random_both_ok=passed_random,
+        statement="允许族 = { f(x)=2^x (x<0), f(0)≥1, (0,+∞) 上严格递增且 ≤0 }",
+    )
+    print("[实验4] “完整刻画”的双向检验（均匀网格 %d×%d）" % (len(xs), len(ds)))
+    print("        (a) 允许族随机取样 %d 个 → 同时通过①与②的个数 = %d" % (n_valid, ok_a2))
+    label = {"positive_bump": "正值凸起(x≥1)", "decrease": "制造下降段", "small_f0": "f(0)<1"}
+    for k, (g, h) in stat.items():
+        print("        (b) 扰动 %-14s %3d 个 → 网格抓到 %3d + 构造抓到 %3d = %d"
+              % (label[k], n_perturb, g, h, g + h))
+    print("            两种手段都未抓到(可疑)的个数 = %d" % len(escaped))
+    print("        (c) 纯随机分段线性 %d 个 → 同时通过①与②的个数 = %d" % (n_random, passed_random))
+
+
+# ----------------------------------------------------------------------
+
+
+def run_verification():
+    print("=" * 82)
+    print("2026 新课标全国Ⅰ卷 第19题 解答校验")
+    print("=" * 82)
+    experiment_1()
+    print("-" * 82)
+    experiment_2()
+    print("-" * 82)
+    experiment_3()
+    print("-" * 82)
+    experiment_4()
+    print("=" * 82)
+    with open(REPORT_JSON, "w", encoding="utf-8") as fh:
+        json.dump(REPORT, fh, ensure_ascii=False, indent=2)
+    print("报告已写入:", os.path.abspath(REPORT_JSON))
+    
+
+
+# ==============================================================================
+# 第 2 部分  公式渲染（对应 code/mathimg.py）
+# ==============================================================================
+def formula_path(tex, color="#12395C", fontsize=26, dpi=360):
+    key = hashlib.md5(("%s|%s|%d|%d" % (tex, color, fontsize, dpi)).encode("utf-8")).hexdigest()[:16]
+    p = os.path.join(FORMULA_DIR, "m_%s.png" % key)
+    if not os.path.exists(p):
+        fig = plt.figure(figsize=(0.01, 0.01))
+        fig.text(0, 0, "$%s$" % tex, fontsize=fontsize, color=color)
+        fig.savefig(p, dpi=dpi, transparent=True, bbox_inches="tight", pad_inches=0.02)
+        plt.close(fig)
+    return p
+
+
+def formula_size(tex, color="#12395C"):
+    p = formula_path(tex, color)
+    w, h = Image.open(p).size
+    return p, w, h
+
+
+def formula_at(tex, height_in, color="#12395C"):
+    """返回 (路径, 宽, 高)：把公式按指定高度等比缩放。"""
+    p, w, h = formula_size(tex, color)
+    return p, height_in * w / h, height_in
+
+
+# ==============================================================================
+# 第 3 部分  插图（对应 code/figures.py）
+# ==============================================================================
+FIG_DIR = os.path.join(ASSETS, "figures")
+os.makedirs(FIG_DIR, exist_ok=True)
+FONT_CN = FontProperties(fname=TTF_R) if TTF_R else FontProperties()
+FONT_CNB = FontProperties(fname=TTF_B) if TTF_B else FONT_CN
+
+F_NAVY = "#12395C"
+F_BLUE = "#1F6FB2"
+F_GOLD = "#D9971F"
+F_RED = "#C0392B"
+F_GREEN = "#1E8449"
+F_GRAY = "#7A8794"
+F_TEXT = "#22303C"
+os.makedirs(FIG_DIR, exist_ok=True)
+
+
+def _fig_clean(ax):
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_color(F_GRAY)
+    ax.spines["bottom"].set_color(F_GRAY)
+    ax.tick_params(labelsize=9, colors=F_TEXT)
+    ax.axhline(0, color="#C8D2DA", lw=1)
+    ax.axvline(0, color="#C8D2DA", lw=1)
+
+
+# ----------------------------------------------------------------- 图1 第(1)问
+def draw_fig1():
+    fig = plt.figure(figsize=(6.6, 4.9))
+    gs = fig.add_gridspec(2, 1, height_ratios=[3.1, 1.0], hspace=0.55)
+    ax = fig.add_subplot(gs[0])
+    x = np.linspace(-2.4, 2.4, 1600)
+    y = np.where(x < 0, 2.0 ** np.clip(x, -30, 0), 1.0 - x)
+    ax.plot(x, y, color=F_NAVY, lw=2.4, zorder=3, label="f(x)")
+    ax.axhline(0.5, color=F_RED, ls="--", lw=1.4, zorder=2)
+    ax.text(-2.32, 0.62, r"$y=\frac{1}{2}$", fontsize=11, color=F_RED)
+    ax.plot([-1], [0.5], "o", color=F_RED, ms=6, zorder=4)
+    ax.annotate(r"$f(-1)=\frac{1}{2}$", xy=(-1, 0.5), xytext=(-2.25, 1.35),
+                fontsize=11, color=F_RED, fontproperties=FONT_CN,
+                arrowprops=dict(arrowstyle="->", color=F_RED, lw=1.1))
+    m = (x > -1) & (x < 0.5)
+    ax.fill_between(x[m], 0.5, y[m], color=F_GOLD, alpha=0.30, zorder=1)
+    ax.text(0.06, 1.05, "$f(x) > f(-1)$" + "\n" +
+            r"$\Leftrightarrow\ x\in(-1,\ \frac{1}{2})$", fontsize=10.5,
+            color="#8A5B00", fontproperties=FONT_CN)
+    ax.set_xlim(-2.4, 2.4)
+    ax.set_ylim(-1.25, 2.3)
+    _fig_clean(ax)
+    ax.set_xlabel("x", fontsize=11, color=F_TEXT)
+    ax.set_ylabel("y = f(x)", fontsize=11, color=F_TEXT)
+    ax.set_title(r"① 分段函数 $y=f(x)$：$f(x)=2^x\ (x<0)$，$f(x)=1-x\ (x\geq 0)$",
+                 fontproperties=FONT_CN, fontsize=11.5, color=F_NAVY, pad=8)
+
+    ax2 = fig.add_subplot(gs[1])
+    ax2.set_xlim(-0.6, 1.9)
+    ax2.set_ylim(-1.0, 1.0)
+    ax2.axis("off")
+    ax2.annotate("", xy=(1.82, 0), xytext=(-0.55, 0),
+                 arrowprops=dict(arrowstyle="-|>", color=F_GRAY, lw=1.4))
+    ax2.plot([0, 1.5], [0, 0], color=F_GOLD, lw=7, solid_capstyle="butt", zorder=3)
+    for xv in (0.0, 1.5):
+        ax2.plot([xv], [0], "o", mfc="white", mec=F_GOLD, mew=2.2, ms=9, zorder=4)
+        ax2.text(xv, -0.42, ("0" if xv == 0 else "3/2"), ha="center",
+                 fontsize=11, color=F_TEXT, fontproperties=FONT_CN)
+    ax2.text(0.75, 0.42, "D(−1) = (0, 3/2)", ha="center", fontsize=12,
+             color="#8A5B00", fontproperties=FONT_CNB)
+    ax2.text(-0.55, -0.75, "把区间 (−1, ½) 向右平移 1 个单位即得 D(−1)", fontsize=9.5,
+             color=F_GRAY, fontproperties=FONT_CN)
+    fig.savefig(os.path.join(FIG_DIR, "fig1_Dminus1.png"), dpi=230,
+                transparent=True, bbox_inches="tight", pad_inches=0.06)
+    plt.close(fig)
+
+
+# ----------------------------------------------------------------- 图2 第(2)问
+def draw_fig2():
+    fig, ax = plt.subplots(figsize=(6.5, 4.4))
+    x = np.linspace(-3.0, 3.0, 2000)
+    y = np.where(x < 0, 2.0 ** np.clip(x, -30, 0), -2.0 ** np.clip(-x, -30, 0))
+    y[np.abs(x) < 1e-9] = 0.0
+    ax.plot(x, y, color=F_NAVY, lw=2.4, zorder=3)
+    ax.plot([0], [0], "o", color=F_RED, ms=6, zorder=4)
+    ax.plot([-1.2, 0], [2 ** -1.2, 0], ls=":", color=F_GRAY, lw=1.2)
+    ax.annotate("f(0)=0", xy=(0, 0), xytext=(0.15, 0.28), fontsize=10.5,
+                color=F_RED, fontproperties=FONT_CN)
+    ax.annotate("在 (−∞,0) 上递增\n值域 (0,1)", xy=(-1.6, 0.33), xytext=(-2.9, 1.05),
+                fontsize=10.5, color=F_BLUE, fontproperties=FONT_CN,
+                arrowprops=dict(arrowstyle="->", color=F_BLUE, lw=1.1))
+    ax.annotate("在 (0,+∞) 上递增\n值域 (−1,0)", xy=(1.6, -0.33), xytext=(0.55, -1.0),
+                fontsize=10.5, color=F_GREEN, fontproperties=FONT_CN,
+                arrowprops=dict(arrowstyle="->", color=F_GREEN, lw=1.1))
+    ax.text(-3.05, -1.25, "整体并不单调：$f(-0.5)=0.71 > f(0.5)=-0.71$",
+            fontsize=10, color="#8A5B00", fontproperties=FONT_CN)
+    ax.set_xlim(-3.1, 3.1)
+    ax.set_ylim(-1.5, 1.6)
+    _fig_clean(ax)
+    ax.set_title(r"② 奇函数延拓：$f(x)=2^x\ (x<0)$，$f(0)=0$，$f(x)=-2^{-x}\ (x>0)$",
+                 fontproperties=FONT_CN, fontsize=11.5, color=F_NAVY, pad=8)
+    fig.savefig(os.path.join(FIG_DIR, "fig2_odd.png"), dpi=230,
+                transparent=True, bbox_inches="tight", pad_inches=0.06)
+    plt.close(fig)
+
+
+# ------------------------------------------------- 图3 (3)(ii) 的“平移”构造
+def draw_fig3():
+    fig, ax = plt.subplots(figsize=(8.6, 2.9))
+    ax.set_xlim(-3.45, 2.35)
+    ax.set_ylim(-1.45, 1.25)
+    ax.axis("off")
+    ax.annotate("", xy=(2.28, 0), xytext=(-3.38, 0),
+                arrowprops=dict(arrowstyle="-|>", color=F_GRAY, lw=1.5))
+    ax.plot([-3.38, 0], [0, 0], color=F_NAVY, lw=5, solid_capstyle="butt", alpha=0.22)
+    ax.text(-3.38, 1.02, r"$x<0$：$f(x)=2^x$（严格递增）", fontsize=10,
+            color=F_NAVY, fontproperties=FONT_CN, ha="left")
+    n, m, half, x1 = -2.4, -0.9, 0.5, 1.7
+    for xv, name, col, dy in ((m, "$m$", F_BLUE, 0.30), (half, r"$\frac{1}{2}$", F_GOLD, 0.30),
+                              (x1, "$x_1$", F_GREEN, 0.30), (n, "$n$", F_BLUE, -0.30)):
+        ax.plot([xv], [0], "o", color=col, ms=7, zorder=4)
+        ax.text(xv, dy, name, fontsize=11.5, color=col, ha="center",
+                va="center", fontproperties=FONT_CNB)
+    ax.text(0, -0.34, "$0$", fontsize=11.5, color=F_GRAY, ha="center", fontproperties=FONT_CNB)
+    ax.text(n, -0.66, r"$n=m-x_1+\frac{1}{2}$", fontsize=10.5, color=F_BLUE,
+            ha="center", fontproperties=FONT_CN)
+    ax.add_patch(FancyArrowPatch((m, 0.66), (x1, 0.66), arrowstyle="<|-|>",
+                                 color=F_GREEN, lw=1.6, mutation_scale=12))
+    ax.text((m + x1) / 2, 0.90, r"$d=x_1-m$", fontsize=11, color=F_GREEN,
+            ha="center", fontproperties=FONT_CN)
+    ax.add_patch(FancyArrowPatch((n, -1.00), (half, -1.00), arrowstyle="<|-|>",
+                                 color=F_GOLD, lw=1.6, mutation_scale=12))
+    ax.text((n + half) / 2, -1.28, "同一个 d：m→$x_1$ 与 n→½ 同步平移", fontsize=10,
+            color="#8A5B00", ha="center", fontproperties=FONT_CN)
+    ax.text(1.15, -0.42, "0 < ½ < 1，且 f(½) ≤ 0", fontsize=10,
+            color=F_GOLD, ha="left", fontproperties=FONT_CN)
+    fig.savefig(os.path.join(FIG_DIR, "fig3_shift.png"), dpi=230,
+                transparent=True, bbox_inches="tight", pad_inches=0.06)
+    plt.close(fig)
+
+
+# ------------------------------------------------- 图4 条件的“完整刻画”
+def draw_fig4():
+    fig, ax = plt.subplots(figsize=(6.4, 4.2))
+    xl = np.linspace(-2.2, 0, 600)
+    xr = np.linspace(0.12, 3.2, 900)
+    ax.plot(xl, 2.0 ** xl, color=F_NAVY, lw=2.4, label=r"$f(x)=2^x\ (x<0)$")
+    ax.plot(xr, -1.0 / xr, color=F_GREEN, lw=2.4, label=r"$f(x)=-1/x\ (x>0)$")
+    ax.plot([0], [1.2], "o", color=F_RED, ms=7, zorder=5)
+    ax.annotate("f(0) ≥ 1", xy=(0, 1.2), xytext=(0.12, 1.55), fontsize=11,
+                color=F_RED, fontproperties=FONT_CNB)
+    ax.axhspan(-1.3, 0, xmin=0.5, xmax=1.0, color=F_GREEN, alpha=0.10)
+    ax.text(1.5, -0.35, r"(0,+∞) 上：$f\leq 0$ 且严格递增", fontsize=11,
+            color=F_GREEN, fontproperties=FONT_CN)
+    ax.set_xlim(-2.3, 3.3)
+    ax.set_ylim(-1.3, 1.85)
+    _fig_clean(ax)
+    ax.legend(prop=FONT_CN, fontsize=10, frameon=False, loc="upper left")
+    ax.set_title("③ 条件①②的“完整刻画”之一例", fontproperties=FONT_CN,
+                 fontsize=11.5, color=F_NAVY, pad=8)
+    fig.savefig(os.path.join(FIG_DIR, "fig4_family.png"), dpi=230,
+                transparent=True, bbox_inches="tight", pad_inches=0.06)
+    plt.close(fig)
+
+
+def run_figures():
+    draw_fig1(); draw_fig2(); draw_fig3(); draw_fig4()
+    print("插图已生成:", os.path.abspath(FIG_DIR))
+
+
+
+# ==============================================================================
+# 第 4 部分  绘图层：图元列表 → pptx / PNG 预览（对应 code/deck_lib.py）
+# ==============================================================================
+ALIGN_PPTX = {"l": PP_ALIGN.LEFT, "c": PP_ALIGN.CENTER,
+              "r": PP_ALIGN.RIGHT, "j": PP_ALIGN.JUSTIFY}
+ANCHOR_PPTX = {"t": MSO_ANCHOR.TOP, "m": MSO_ANCHOR.MIDDLE, "b": MSO_ANCHOR.BOTTOM}
+
+
+def rgb(h: str) -> RGBColor:
+    return RGBColor.from_string(h.lstrip("#").upper())
+
+
+# ---------------------------------------------------------------- 图元构造
+SUP_MAP = {"ˣ": "x", "ᵖ": "p", "ᵐ": "m", "ᵃ": "a", "ⁿ": "n", "ᵘ": "u",
+           "ʸ": "y", "ᵈ": "d", "ᵏ": "k", "ᵛ": "v", "⁰": "0", "¹": "1",
+           "²": "2", "³": "3", "⁴": "4", "⁵": "5", "⁻": "-"}
+SUB_MAP = {"₀": "0", "₁": "1", "₂": "2", "₃": "3", "₄": "4",
+           "₅": "5", "₆": "6", "₇": "7", "₈": "8", "₉": "9"}
+
+
+def _plain(s: str) -> str:
+    """把上/下标字符还原成普通字符（用于 ^ {...} 里再嵌套的情况）。"""
+    return "".join(SUP_MAP.get(ch, SUB_MAP.get(ch, ch)) for ch in s)
+
+
+def R(t, sz=16, b=False, i=False, c="#22303C", math=False, sup=False, sub=False):
+    """一个文本 run。math=True 用数学字体。
+
+    约定：``x₀``、``2ˣ``、``2^{p+d}``、``x^2`` 都会被自动拆成上/下标 run，
+    这样 pptx 端用的是真正的 baseline 上下标（任何字体都不会缺字）。
+    """
+    segs, buf, state = [], "", None
+
+    def flush():
+        nonlocal buf, state
+        if buf:
+            segs.append((buf, state))
+            buf = ""
+
+    k = 0
+    while k < len(t):
+        ch = t[k]
+        if ch == "^" and k + 1 < len(t):
+            if t[k + 1] == "{":
+                j = t.find("}", k + 2)
+                if j != -1:
+                    flush()
+                    segs.append((_plain(t[k + 2:j]), "sup"))
+                    state = None
+                    k = j + 1
+                    continue
+            else:
+                flush()
+                segs.append((_plain(t[k + 1]), "sup"))
+                state = None
+                k += 2
+                continue
+        st = "sup" if ch in SUP_MAP else ("sub" if ch in SUB_MAP else None)
+        if st != state:
+            flush()
+            state = st
+        buf += (SUP_MAP[ch] if st == "sup" else SUB_MAP[ch] if st == "sub" else ch)
+        k += 1
+    flush()
+    if sup or sub:
+        return dict(t="".join(s for s, _ in segs), sz=sz, b=b, i=i, c=c,
+                    math=math, sup=sup, sub=sub)
+    if len(segs) == 1 and segs[0][1] is None:
+        return dict(t=segs[0][0], sz=sz, b=b, i=i, c=c, math=math, sup=False, sub=False)
+    return [dict(t=s, sz=sz, b=b, i=i, c=c, math=math,
+                 sup=(st == "sup"), sub=(st == "sub")) for s, st in segs]
+
+
+def P(runs, align="l", after=0, line=1.2, hang=0.0, bullet=False):
+    """一个段落。runs 可以是字符串或 run/run 列表；bullet=True 时加悬挂缩进项目符号。"""
+    if isinstance(runs, str):
+        runs = [R(runs)]
+    flat = []
+    for it in runs:
+        flat.extend(it if isinstance(it, list) else [it])
+    flat = [r for r in flat if r.get("t")]
+    if not flat:
+        flat = [R(" ", sz=10)]
+    if bullet:
+        flat = [R("▪  ", c="#C98A12", b=True)] + flat
+        hang = hang or 0.22
+    return dict(runs=flat, align=align, after=after, line=line, hang=hang)
+
+
+class Slide:
+    def __init__(self, bg="#FFFFFF", name=""):
+        self.bg = bg
+        self.name = name
+        self.items = []
+
+    def rect(self, x, y, w, h, fill=None, line=None, lw=1.0, radius=None):
+        self.items.append(dict(k="rect", x=x, y=y, w=w, h=h,
+                               fill=fill, line=line, lw=lw, radius=radius))
+        return self
+
+    def text(self, x, y, w, h, paras, align="l", anchor="t", line=1.2):
+        if isinstance(paras, str):
+            paras = [P(paras)]
+        self.items.append(dict(k="text", x=x, y=y, w=w, h=h, paras=paras,
+                               align=align, anchor=anchor, line=line))
+        return self
+
+    def image(self, x, y, w, h, path):
+        self.items.append(dict(k="image", x=x, y=y, w=w, h=h, path=path))
+        return self
+
+    def image_fit(self, x, y, w, h, path, align="c", valign="m"):
+        """把图片等比放进 (x,y,w,h) 的框内。"""
+        iw, ih = Image.open(path).size
+        ratio = iw / float(ih)
+        if w / float(h) > ratio:
+            hh, ww = h, h * ratio
+        else:
+            ww, hh = w, w / ratio
+        dx = {"l": 0.0, "c": (w - ww) / 2.0, "r": w - ww}[align]
+        dy = {"t": 0.0, "m": (h - hh) / 2.0, "b": h - hh}[valign]
+        self.items.append(dict(k="image", x=x + dx, y=y + dy, w=ww, h=hh, path=path))
+        return (x + dx, y + dy, ww, hh)
+
+
+# ---------------------------------------------------------------- pptx 后端
+def _set_ea_font(run, typeface=CN_FONT):
+    rPr = run._r.get_or_add_rPr()
+    for tag in ("a:ea", "a:cs"):
+        el = rPr.find(qn(tag))
+        if el is not None:
+            rPr.remove(el)
+    ea = rPr.makeelement(qn("a:ea"), {"typeface": typeface})
+    rPr.append(ea)
+
+
+def render_pptx(slides, path):
+    prs = Presentation()
+    prs.slide_width, prs.slide_height = Inches(SW), Inches(SH)
+    blank = prs.slide_layouts[6]
+    for s in slides:
+        sl = prs.slides.add_slide(blank)
+        bg = sl.background.fill
+        bg.solid()
+        bg.fore_color.rgb = rgb(s.bg)
+        for it in s.items:
+            if it["k"] == "rect":
+                if it["radius"]:
+                    shp = sl.shapes.add_shape(
+                        MSO_SHAPE.ROUNDED_RECTANGLE, Inches(it["x"]), Inches(it["y"]),
+                        Inches(it["w"]), Inches(it["h"]))
+                    shp.adjustments[0] = min(0.5, it["radius"] / max(it["h"], 1e-6))
+                else:
+                    shp = sl.shapes.add_shape(
+                        MSO_SHAPE.RECTANGLE, Inches(it["x"]), Inches(it["y"]),
+                        Inches(it["w"]), Inches(it["h"]))
+                if it["fill"]:
+                    shp.fill.solid()
+                    shp.fill.fore_color.rgb = rgb(it["fill"])
+                else:
+                    shp.fill.background()
+                if it["line"]:
+                    shp.line.color.rgb = rgb(it["line"])
+                    shp.line.width = Pt(it["lw"])
+                else:
+                    shp.line.fill.background()
+                shp.shadow.inherit = False
+                if shp.has_text_frame:
+                    shp.text_frame.text = ""
+            elif it["k"] == "text":
+                tb = sl.shapes.add_textbox(Inches(it["x"]), Inches(it["y"]),
+                                           Inches(it["w"]), Inches(it["h"]))
+                tf = tb.text_frame
+                tf.word_wrap = True
+                tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
+                tf.vertical_anchor = ANCHOR_PPTX[it["anchor"]]
+                for i, para in enumerate(it["paras"]):
+                    p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+                    p.alignment = ALIGN_PPTX[para.get("align", it["align"])]
+                    p.line_spacing = para.get("line", it["line"])
+                    p.space_after = Pt(para.get("after", 0))
+                    if para.get("hang"):
+                        pPr = p._p.get_or_add_pPr()
+                        pPr.set("marL", str(Emu(int(Inches(para["hang"])))))
+                        pPr.set("indent", str(-Emu(int(Inches(para["hang"])))))
+                    for run in para["runs"]:
+                        r = p.add_run()
+                        r.text = run["t"]
+                        f = r.font
+                        small = run.get("sup") or run.get("sub")
+                        f.size = Pt(run.get("sz", 16) * (0.68 if small else 1.0))
+                        f.bold = bool(run.get("b"))
+                        f.italic = bool(run.get("i"))
+                        f.color.rgb = rgb(run.get("c", "#22303C"))
+                        f.name = MATH_FONT if run.get("math") else CN_FONT
+                        if run.get("sup"):
+                            f._rPr.set("baseline", "30000")
+                        elif run.get("sub"):
+                            f._rPr.set("baseline", "-25000")
+                        _set_ea_font(r, CN_FONT)
+            else:
+                sl.shapes.add_picture(it["path"], Inches(it["x"]), Inches(it["y"]),
+                                      Inches(it["w"]), Inches(it["h"]))
+    prs.save(path)
+    return path
+
+
+# ---------------------------------------------------------------- PNG 预览后端
+def _ttf(bold):
+    p = TTF_B if bold else TTF_R
+    if p and os.path.exists(p):
+        return p
+    return TTF_R if (TTF_R and os.path.exists(TTF_R)) else None
+
+
+def render_previews(slides, outdir, dpi=110, verbose=True):
+    os.makedirs(outdir, exist_ok=True)
+    W, H = int(SW * dpi), int(SH * dpi)
+    cache, paths, warns = {}, [], []
+
+    def font(sz, bold):
+        key = (round(sz), bold)
+        if key not in cache:
+            path = _ttf(bold)
+            size = max(6, int(round(sz * dpi / 72.0)))
+            cache[key] = ImageFont.truetype(path, size) if path else ImageFont.load_default(size)
+        return cache[key]
+
+    for n, s in enumerate(slides, 1):
+        img = Image.new("RGB", (W, H), s.bg)
+        dr = ImageDraw.Draw(img)
+        for it in s.items:
+            if it["k"] == "rect":
+                box = [it["x"] * dpi, it["y"] * dpi, (it["x"] + it["w"]) * dpi,
+                       (it["y"] + it["h"]) * dpi]
+                r = it["radius"] * dpi if it["radius"] else 0
+                dr.rounded_rectangle(box, radius=r, fill=it["fill"],
+                                     outline=it["line"],
+                                     width=max(1, int(it["lw"] * dpi / 72.0)) if it["line"] else 0)
+            elif it["k"] == "image":
+                im = Image.open(it["path"]).convert("RGBA")
+                im = im.resize((max(1, int(it["w"] * dpi)), max(1, int(it["h"] * dpi))),
+                               Image.LANCZOS)
+                img.paste(im, (int(it["x"] * dpi), int(it["y"] * dpi)), im)
+            else:
+                _draw_text(dr, it, dpi, font, warns, n)
+        p = os.path.join(outdir, "slide_%02d.png" % n)
+        img.save(p)
+        paths.append(p)
+    if verbose:
+        for w in warns:
+            print("  [排版警告]", w)
+        if not warns:
+            print("  预览渲染完成，未发现文字溢出。")
+    return paths
+
+
+def _draw_text(dr, it, dpi, fontfn, warns, slide_no):
+    """近似渲染文本（左对齐 / 居中 / 右对齐 + 简单换行 + 悬挂缩进）。"""
+    x0, y0 = it["x"] * dpi, it["y"] * dpi
+    w0, h0 = it["w"] * dpi, it["h"] * dpi
+    cy = y0
+    total = 0.0
+    for para in it["paras"]:
+        runs = para["runs"]
+        hang = para.get("hang", 0.0) * dpi
+        base_sz = max(r.get("sz", 16) for r in runs)
+        lh = base_sz * dpi / 72.0 * para.get("line", it["line"]) * 1.18
+
+        def eff(run):
+            sz = run.get("sz", 16) * (0.68 if (run.get("sup") or run.get("sub")) else 1.0)
+            return fontfn(sz, run.get("b"))
+
+        # 折行
+        lines, cur, curw = [], [], 0.0
+        for run in runs:
+            f = eff(run)
+            for ch in run["t"]:
+                cw = dr.textlength(ch, font=f)
+                limit = w0 - (hang if lines else 0.0)
+                if curw + cw > limit and cur:
+                    lines.append(cur)
+                    cur, curw = [], 0.0
+                cur.append((ch, run, f, cw))
+                curw += cw
+        lines.append(cur)
+        base_px = base_sz * dpi / 72.0
+        asc_base = fontfn(base_sz, False).getmetrics()[0]
+        for li, line in enumerate(lines):
+            lw = sum(c[3] for c in line)
+            if para.get("align", it["align"]) == "c":
+                sx = x0 + (w0 - lw) / 2.0
+            elif para.get("align", it["align"]) == "r":
+                sx = x0 + w0 - lw
+            else:
+                sx = x0 + (0.0 if li == 0 else hang)
+            for ch, run, f, cw in line:
+                dy = 0.0
+                if run.get("sup"):
+                    dy = -0.36 * base_px
+                elif run.get("sub"):
+                    dy = 0.13 * base_px
+                dr.text((sx, cy + asc_base + dy), ch, font=f,
+                        fill=run.get("c", "#22303C"), anchor="ls")
+                sx += cw
+            cy += lh
+            total += lh
+        cy += para.get("after", 0) * dpi / 72.0
+        total += para.get("after", 0) * dpi / 72.0
+    if total > h0 + 1.5:
+        warns.append("第%d页 文本框超高 %.2f in (框高 %.2f): %s"
+                     % (slide_no, (total - h0) / dpi, h0 / dpi,
+                        "".join(r["t"] for r in it["paras"][0]["runs"])[:26]))
+
+
+# ==============================================================================
+# 第 5 部分  19 页幻灯片内容与生成（对应 code/make_deck.py）
+# ==============================================================================
+# ------------------------------------------------------------------ 视觉规范
+NAVY = "#0F2C4C"
+BLUE = "#1F6FB2"
+LBLUE = "#EAF2F9"
+GOLD = "#C98A12"
+LGOLD = "#FCF4E4"
+CARD = "#F1F6FB"
+CARD2 = "#F7FAFD"
+TEXT = "#22303C"
+GRAY = "#6B7A8A"
+RED = "#C0392B"
+LRED = "#FBEDEB"
+GREEN = "#1E8449"
+LGREEN = "#EDF7F0"
+DARK = "#12395C"
+LINE = "#DCE5EE"
+WHITE = "#FFFFFF"
+TOTAL = 19
+
+
+# ------------------------------------------------------------------ 版式工具
+def head(s: Slide, kicker, title):
+    s.rect(0, 0, SW, 0.088, fill=NAVY)
+    s.rect(0, 0, 3.4, 0.088, fill=GOLD)
+    s.text(0.62, 0.30, 11.5, 0.30, [P([R(kicker, sz=12.5, b=True, c=GOLD)])])
+    s.text(0.60, 0.56, 12.2, 0.56, [P([R(title, sz=25, b=True, c=NAVY)])])
+    s.rect(0.62, 1.235, 12.1, 0.014, fill=LINE)
+
+
+def foot(s: Slide, idx, note="2026 · 新课标全国Ⅰ卷 · 数学第 19 题（压轴题）解析"):
+    s.text(0.62, 7.06, 8.6, 0.28, [P([R(note, sz=9.5, c=GRAY)])])
+    s.text(11.4, 7.03, 1.32, 0.30, [P([R("%02d / %d" % (idx, TOTAL), sz=11, b=True, c=NAVY)],
+                                    align="r")])
+
+
+def page(kicker, title, idx):
+    s = Slide(bg=WHITE, name=title)
+    head(s, kicker, title)
+    foot(s, idx)
+    return s
+
+
+def card(s, x, y, w, h, fill=CARD, line=None, radius=0.09):
+    s.rect(x, y, w, h, fill=fill, line=line, radius=radius)
+
+
+def fml(s, tex, x, y, h, color=DARK):
+    p, w, hh = formula_at(tex, h, color)
+    s.image(x, y, w, hh, p)
+    return w
+
+
+def fml_c(s, tex, x0, y, w, h, color=DARK):
+    """在 [x0, x0+w] 内水平居中放置公式。"""
+    p, ww, hh = formula_at(tex, h, color)
+    if ww > w:
+        ww, hh = w, h * w / ww
+        p, _, _ = formula_at(tex, hh, color)
+    s.image(x0 + (w - ww) / 2.0, y, ww, hh, p)
+    return ww
+
+
+def txt(s, x, y, w, h, paras, sz=13.5, line=1.32, gap=7, align="l", anchor="t"):
+    if isinstance(paras, str):
+        paras = [paras]
+    out = []
+    for it in paras:
+        if isinstance(it, str):
+            out.append(P([R(it, sz=sz, c=TEXT)], align=align, after=gap, line=line))
+        else:
+            out.append(it)
+    s.text(x, y, w, h, out, align=align, anchor=anchor)
+
+
+def T(t, sz=13.5, b=False, c=TEXT, math=False, after=7, bullet=False, line=1.32, align="l"):
+    return P([R(t, sz=sz, b=b, c=c, math=math)], after=after, bullet=bullet, line=line, align=align)
+
+
+def MIX(runs, after=7, bullet=False, line=1.32, align="l"):
+    return P(runs, after=after, bullet=bullet, line=line, align=align)
+
+
+def load_report():
+    p = REPORT_JSON
+    try:
+        with open(p, encoding="utf-8") as fh:
+            return json.load(fh)
+    except Exception:
+        return {}
+
+
+# ================================================================== 各页内容
+def s01_cover():
+    s = Slide(bg=NAVY)
+    s.rect(0, 0, SW, SH, fill=NAVY)
+    s.rect(0, 0, SW, 0.16, fill=GOLD)
+    s.rect(0.9, 1.55, 0.13, 1.5, fill=GOLD)
+    s.text(1.25, 1.42, 11.2, 0.5,
+           [P([R("2026 年普通高等学校招生全国统一考试（新高考Ⅰ卷 · 全国一卷）",
+                 sz=15.5, b=True, c="#9FC4E4")])])
+    s.text(1.25, 1.92, 11.2, 1.3,
+           [P([R("数学第 19 题（压轴题）解析", sz=44, b=True, c=WHITE)])])
+    s.text(1.25, 3.15, 11.2, 0.6,
+           [P([R("新定义集合 D(x₀) 与抽象函数的单调性", sz=21, c="#D9E6F2")])])
+    s.rect(1.28, 3.92, 3.1, 0.045, fill=GOLD)
+    for i, (t1, t2) in enumerate([("第 (1) 问", "翻译定义 · 解不等式"),
+                                  ("第 (2) 问", "分段求 D · 分类讨论"),
+                                  ("第 (3) 问", "反证 · 构造 · 递增")]):
+        x = 1.25 + i * 3.75
+        s.rect(x, 4.35, 3.35, 1.05, fill="#16395F", line="#2A5480", radius=0.08)
+        s.text(x + 0.26, 4.53, 3.0, 0.32, [P([R(t1, sz=14.5, b=True, c=GOLD)])])
+        s.text(x + 0.26, 4.88, 3.0, 0.34, [P([R(t2, sz=12.5, c="#CFE0EF")])])
+    s.text(1.25, 5.90, 11.2, 0.9,
+           [P([R("结论速览：", sz=13.5, b=True, c=GOLD),
+               R("D(−1) = (0, 3/2)；D(x₂) ⊆ D(x₁)；f(0) ≥ 1，且 f 在 (0, +∞) 上严格递增。",
+                 sz=13.5, c="#D9E6F2")]),
+            P([R("条件 ①② 的完整刻画：f(0) ≥ 1，且 f 在 (0, +∞) 上取值非正、严格递增。",
+                 sz=12.5, c="#9FC4E4")], after=0)])
+    return s
+
+
+def s02_toc():
+    s = page("CONTENTS", "目录", 2)
+    items = [("01", "原题呈现与题目信息", "题面、三问结构、考点定位"),
+             ("02", "定义翻译：D(x₀) 到底是什么", "把新定义换成“函数值变大”的语言"),
+             ("03", "第 (1) 问：分段函数求 D(−1)", "直接翻译 + 解两个不等式"),
+             ("04", "第 (2) 问：奇函数与集合包含", "求解析式 → 三段 D(x₀) → 分类讨论"),
+             ("05", "第 (3) 问：两条条件推出的必然结论", "反证 f(0) ≥ 1；三步证明 (0,+∞) 上递增"),
+             ("06", "完整刻画、数值校验与方法提炼", "充要条件 · 数值校验 · 易错清单")]
+    for i, (no, t, sub) in enumerate(items):
+        y = 1.55 + i * 0.88
+        card(s, 0.62, y, 12.1, 0.74, fill=CARD2 if i % 2 else CARD, radius=0.07)
+        s.rect(0.62, y, 0.075, 0.74, fill=GOLD if i < 5 else GREEN, radius=0.03)
+        s.text(0.9, y + 0.16, 0.8, 0.4, [P([R(no, sz=17, b=True, c=GOLD)])])
+        s.text(1.75, y + 0.10, 5.4, 0.5, [P([R(t, sz=15.5, b=True, c=NAVY)])])
+        s.text(7.3, y + 0.17, 5.2, 0.4, [P([R(sub, sz=12, c=GRAY)])])
+    return s
+
+
+def s03_problem():
+    s = page("原题呈现", "2026 · 新课标全国Ⅰ卷 · 第 19 题（解答题，17 分）", 3)
+    card(s, 0.62, 1.45, 12.1, 3.35, fill=CARD, radius=0.08)
+    txt(s, 0.95, 1.62, 11.5, 1.0, [
+        MIX([R("已知函数 ", sz=14.5), R("f(x)", sz=14.5, math=True, i=True),
+             R(" 的定义域为 ", sz=14.5), R("R", sz=14.5, math=True),
+             R("，且当 ", sz=14.5), R("x < 0", sz=14.5, math=True),
+             R(" 时，", sz=14.5), R("f(x) = 2ˣ", sz=14.5, math=True),
+             R("。对任意 ", sz=14.5), R("x₀ ∈ R", sz=14.5, math=True),
+             R("，定义集合", sz=14.5)], after=8)
+    ])
+    fml_c(s, r"D(x_0)=\{\,d\in\mathbb{R}\ \mid\ f(x_0+d)>f(x_0)\,\}", 0.95, 2.18, 11.45, 0.42)
+    txt(s, 0.95, 2.78, 11.45, 1.9, [
+        MIX([R("（1）", sz=14.5, b=True, c=NAVY),
+             R("若当 ", sz=14.5), R("x ≥ 0", sz=14.5, math=True),
+             R(" 时，", sz=14.5), R("f(x) = 1 − x", sz=14.5, math=True),
+             R("，求 ", sz=14.5), R("D(−1)", sz=14.5, math=True), R("；", sz=14.5)], after=9),
+        MIX([R("（2）", sz=14.5, b=True, c=NAVY),
+             R("若 ", sz=14.5), R("f(x)", sz=14.5, math=True), R(" 是奇函数，", sz=14.5),
+             R("f(x₁) ≤ f(x₂)", sz=14.5, math=True), R("，且 ", sz=14.5),
+             R("x₁x₂ ≠ 0", sz=14.5, math=True), R("，证明：", sz=14.5),
+             R("D(x₂) ⊆ D(x₁)", sz=14.5, math=True), R("；", sz=14.5)], after=9),
+        MIX([R("（3）", sz=14.5, b=True, c=NAVY),
+             R("设 ", sz=14.5), R("f(x)", sz=14.5, math=True), R(" 满足：", sz=14.5),
+             R("①", sz=14.5, c=BLUE, b=True),
+             R(" 若 ", sz=14.5), R("f(x₁) ≤ f(x₂)", sz=14.5, math=True),
+             R("，则 ", sz=14.5), R("D(x₂) ⊆ D(x₁)", sz=14.5, math=True),
+             R("；", sz=14.5),
+             R("②", sz=14.5, c=BLUE, b=True),
+             R(" 当 ", sz=14.5), R("0 < x < 1", sz=14.5, math=True),
+             R(" 时，", sz=14.5), R("f(x) < f(0)", sz=14.5, math=True),
+             R("。证明：", sz=14.5)], after=9),
+        MIX([R("　　（i）", sz=14.5, b=True, c=RED), R("f(0) ≥ 1", sz=14.5, math=True),
+             R("；　（ii）", sz=14.5, b=True, c=RED),
+             R("f(x)", sz=14.5, math=True), R(" 在区间 ", sz=14.5),
+             R("(0, +∞)", sz=14.5, math=True), R(" 上单调递增。", sz=14.5)], after=0),
+    ])
+    card(s, 0.62, 4.95, 5.88, 1.85, fill=LGOLD, radius=0.08)
+    s.text(0.92, 5.12, 5.3, 0.35, [P([R("命题特点", sz=13.5, b=True, c="#8A5B00")])])
+    txt(s, 0.92, 5.50, 5.3, 1.2, [
+        "▪  新定义（集合 D(x₀)）+ 抽象函数，属“现场学习”型压轴题",
+        "▪  第 (1) 问送分，第 (2) 问需分类讨论，第 (3) 问以反证与构造为主",
+    ], sz=12, gap=5)
+    card(s, 6.84, 4.95, 5.88, 1.85, fill=LBLUE, radius=0.08)
+    s.text(7.14, 5.12, 5.3, 0.35, [P([R("答题要求", sz=13.5, b=True, c=NAVY)])])
+    txt(s, 7.14, 5.50, 5.3, 1.2, [
+        "▪  写出文字说明、证明过程或演算步骤",
+        "▪  结论必须落在“集合包含 / 函数值比较 / 单调性”的规范表述上",
+    ], sz=12, gap=5)
+    return s
+
+
+def s04_source():
+    s = page("题目信息", "题目出处、三问结构与考点定位", 4)
+    card(s, 0.62, 1.45, 12.1, 1.30, fill=CARD, radius=0.08)
+    txt(s, 0.95, 1.60, 11.5, 1.05, [
+        MIX([R("出处：", sz=14, b=True, c=NAVY),
+             R("2026 年普通高等学校招生全国统一考试（新高考全国Ⅰ卷）数学，解答题第 19 题，17 分。",
+               sz=14)], after=6),
+        MIX([R("定位：", sz=14, b=True, c=NAVY),
+             R("全卷最后一题（压轴），新定义 + 抽象函数，第 (1) 问具体、第 (2) 问分类、"
+               "第 (3) 问以反证与构造为主。", sz=14)], after=0),
+    ])
+    rows = [("第 (1) 问", "具体分段函数", LBLUE, NAVY,
+             "f(x)=2^x (x<0)，f(x)=1−x (x≥0)", "把定义翻译成不等式，求 D(−1)", "约 4 分"),
+            ("第 (2) 问", "奇函数 + 集合包含", LGREEN, GREEN,
+             "f 为奇函数，f(x₁) ≤ f(x₂) 且 x₁x₂ ≠ 0", "求出三段 D(x₀)，分类讨论验证包含", "约 6 分"),
+            ("第 (3) 问", "两条公理式条件", LGOLD, GOLD,
+             "① f(x₁) ≤ f(x₂) ⇒ D(x₂) ⊆ D(x₁)；② 0<x<1 ⇒ f(x)<f(0)",
+             "反证 f(0) ≥ 1；构造证明 (0,+∞) 上递增", "约 7 分")]
+    y = 2.95
+    for tag, sub, bg, fc, cond, task, score in rows:
+        card(s, 0.62, y, 12.1, 1.16, fill=bg, radius=0.08)
+        s.rect(0.62, y, 0.085, 1.16, fill=fc, radius=0.03)
+        s.text(0.95, y + 0.14, 1.55, 0.32, [P([R(tag, sz=13.5, b=True, c=fc)])])
+        s.text(0.95, y + 0.52, 2.0, 0.5, [P([R(sub, sz=11, c=GRAY)], after=0, line=1.15)])
+        s.text(3.10, y + 0.12, 6.6, 0.42, [P([R(cond, sz=11.5, c=TEXT)], after=0, line=1.2)])
+        s.text(3.10, y + 0.62, 6.6, 0.42, [P([R(task, sz=11.5, c=NAVY)], after=0, line=1.2)])
+        s.text(10.10, y + 0.34, 2.35, 0.4,
+               [P([R(score, sz=12.5, b=True, c=fc)], align="r", after=0)])
+        y += 1.22
+    s.text(0.62, 6.62, 12.1, 0.36,
+           [P([R("考点：集合语言与函数值比较、分段函数与奇偶性、分类讨论、反证法与构造法、"
+                 "单调性的集合刻画。", sz=12, c=GRAY)])])
+    return s
+
+
+def s05_translate():
+    s = page("定义翻译（关键一步）", "把新定义翻译成“函数值变大”的语言", 5)
+    card(s, 0.62, 1.45, 12.1, 1.12, fill=LGOLD, radius=0.08)
+    fml_c(s, r"d\in D(x_0)\Leftrightarrow f(x_0+d)>f(x_0)", 0.95, 1.62, 11.45, 0.42)
+    s.text(0.95, 2.12, 11.45, 0.34,
+           [P([R("一句话：D(x₀) 就是“使函数值变大的增量 d”的集合；把 d 换成终点 y = x₀ + d，就得到",
+                 sz=13, c="#8A5B00")])])
+    # 三段式翻译
+    cols = [
+        ("①  翻译定义", LBLUE, NAVY, [
+            "▪  d ∈ D(x₀) ⇔ f(x₀+d) > f(x₀)",
+            "▪  令 y = x₀ + d，则：",
+            "     y − x₀ ∈ D(x₀) ⇔ f(y) > f(x₀)",
+            "▪  于是“集合的成员关系”与“函数值的大小关系”可以自由互换",
+        ]),
+        ("②  翻译条件①", LGREEN, GREEN, [
+            "▪  f(u) ≤ f(v) ⇒ D(v) ⊆ D(u)",
+            "▪  函数值越大，允许的“上升方向集合”反而越小 —— D 随函数值单调递减",
+            "▪  实践中的唯一用法：",
+            "     f(u) ≤ f(v) 且 f(t) > f(v) ⇒ f(u + t − v) > f(u)",
+        ]),
+        ("③  翻译条件②", LRED, RED, [
+            "▪  0 < x < 1 ⇒ f(x) < f(0)",
+            "▪  区间 (0,1) 上的函数值被 f(0) 严格压住，是后面反证的“雷区”",
+            "▪  配合 (3)(i) 的结论 f(0) ≥ 1，可得",
+            "     0 < x < 1 ⇒ f(x) < 0",
+        ]),
+    ]
+    for i, (title, bg, fc, lines) in enumerate(cols):
+        x = 0.62 + i * 4.09
+        card(s, x, 2.62, 3.85, 3.05, fill=bg, radius=0.08)
+        s.rect(x, 2.62, 3.85, 0.44, fill=fc, radius=0.08)
+        s.rect(x, 2.94, 3.85, 0.12, fill=fc)
+        s.text(x + 0.22, 2.70, 3.4, 0.32, [P([R(title, sz=13.5, b=True, c=WHITE)])])
+        txt(s, x + 0.22, 3.20, 3.45, 2.35, lines, sz=11.5, gap=6, line=1.28)
+    card(s, 0.62, 5.85, 12.1, 0.92, fill=CARD, radius=0.08)
+    txt(s, 0.95, 5.98, 11.45, 0.7, [
+        MIX([R("因此全题的“总钥匙”是：", sz=13, b=True, c=NAVY),
+             R("要证 ", sz=13), R("f(x₂) > f(x₁)", sz=13, math=True),
+             R("，只需证 ", sz=13), R("x₂ − x₁ ∈ D(x₁)", sz=13, math=True),
+             R("；要使用条件 ①，就把“包含”展开成“对每个 t 的不等式”。", sz=13)], after=0),
+    ])
+    return s
+
+
+def s06_roadmap():
+    s = page("解题路线图", "三问三步，层层加码", 6)
+    steps = [
+        ("第 (1) 问", "翻译 + 解不等式", LBLUE, NAVY,
+         ["D(−1) = { d : f(d − 1) > ½ }", "按 d < 1 与 d ≥ 1 分两段", "得 D(−1) = (0, 3/2)"]),
+        ("第 (2) 问", "求解析式 + 分类讨论", LGOLD, GOLD,
+         ["奇函数 ⇒ f(0) = 0，x > 0 时 f(x) = −2⁻ˣ", "分三段写出 D(x₀) 的表达式", "按 x₁、x₂ 的符号分三类验证包含"]),
+        ("第 (3) 问 (i)", "反证 + 用一次条件①", LRED, RED,
+         ["假设 f(0) < 1", "找 p ∈ (−1,0) 使 2ᵖ > f(0)", "得 (0, −p) ⊆ D(0)，与条件②矛盾"]),
+        ("第 (3) 问 (ii)", "两步铺垫 + 一步收口", LGREEN, GREEN,
+         ["先证 (0,1) 上 f ≤ 0，再证 (0,+∞) 上 f ≤ 0",
+          "于是 D(u) = (0, −u]（u < 0）",
+          "由 ① 得 (0,+∞) ⊆ D(v) ⇒ f 严格递增"]),
+    ]
+    for i, (tag, title, bg, fc, lines) in enumerate(steps):
+        y = 1.48 + i * 1.34
+        card(s, 0.62, y, 12.1, 1.20, fill=bg, radius=0.08)
+        s.rect(0.62, y, 0.085, 1.20, fill=fc, radius=0.03)
+        s.text(0.95, y + 0.13, 2.15, 0.34, [P([R(tag, sz=14.5, b=True, c=fc)])])
+        s.text(0.95, y + 0.52, 2.6, 0.5, [P([R(title, sz=12, c=GRAY)], after=0, line=1.15)])
+        for j, ln in enumerate(lines):
+            s.text(3.65, y + 0.14 + j * 0.31, 8.85, 0.30,
+                   [P([R(("▪  " if j == 0 else "▪  "), sz=10.5, c=fc, b=True),
+                       R(ln, sz=12.5, c=TEXT)], after=0, line=1.1)])
+    return s
+
+
+def s07_q1():
+    s = page("第 (1) 问", "直接翻译定义，解两个不等式", 7)
+    card(s, 0.62, 1.45, 12.1, 1.05, fill=CARD, radius=0.08)
+    txt(s, 0.95, 1.58, 11.45, 0.85, [
+        MIX([R("此时 ", sz=13.5), R("f(x) = 2ˣ (x < 0)，f(x) = 1 − x (x ≥ 0)", sz=13.5, math=True),
+             R("，所以 ", sz=13.5), R("f(−1) = 2⁻¹ = ½", sz=13.5, math=True), R("。", sz=13.5)], after=6),
+        MIX([R("按定义：", sz=13.5, b=True, c=NAVY),
+             R("D(−1) = { d : f(−1 + d) > f(−1) } = { d : f(d − 1) > ½ }，令 ", sz=13.5),
+             R("t = d − 1", sz=13.5, math=True), R("，分两段讨论。", sz=13.5)], after=0),
+    ])
+    card(s, 0.62, 2.68, 5.88, 2.05, fill=LBLUE, radius=0.08)
+    s.text(0.92, 2.82, 5.4, 0.32,
+           [P([R("当 t < 0（即 d < 1）", sz=13.5, b=True, c=NAVY)])])
+    fml(s, r"2^{\,t}>\frac{1}{2}\Leftrightarrow t>-1\Leftrightarrow d\in(0,\,1)", 0.92, 3.22, 0.40)
+    txt(s, 0.92, 3.78, 5.4, 0.85, [
+        "此时函数值为正、且严格递增，所以超过 ½ 的部分是 t ∈ (−1, 0)，对应 d ∈ (0, 1)。",
+    ], sz=11.5, gap=3)
+    card(s, 6.84, 2.68, 5.88, 2.05, fill=LGREEN, radius=0.08)
+    s.text(7.14, 2.82, 5.4, 0.32,
+           [P([R("当 t ≥ 0（即 d ≥ 1）", sz=13.5, b=True, c=GREEN)])])
+    fml(s, r"1-t>\frac{1}{2}\Leftrightarrow t<\frac{1}{2}\Leftrightarrow d\in\left[1,\ \frac{3}{2}\right)", 7.14, 3.22, 0.40)
+    txt(s, 7.14, 3.78, 5.4, 0.85, [
+        "此时函数值为 1 − t，随 t 递减，故 t ∈ [0, ½)，对应 d ∈ [1, 3/2)。",
+    ], sz=11.5, gap=3)
+    card(s, 0.62, 4.92, 12.1, 1.85, fill=LGOLD, radius=0.08)
+    s.text(0.92, 5.05, 6.0, 0.34, [P([R("两段合并", sz=14, b=True, c="#8A5B00")])])
+    fml(s, r"D(-1)=(0,\,1)\cup\left[1,\ \frac{3}{2}\right)=(0,\ \frac{3}{2})", 0.92, 5.42, 0.46)
+    txt(s, 7.6, 5.10, 4.9, 1.55, [
+        MIX([R("端点核对：", sz=12, b=True, c="#8A5B00")], after=4),
+        MIX([R("▪  d = 1：f(0) = 1 > ½，", sz=11.5), R("取得到", sz=11.5, b=True, c=GREEN)], after=4),
+        MIX([R("▪  d = 3/2：f(½) = ½，不满足严格大于，", sz=11.5), R("取不到", sz=11.5, b=True, c=RED)], after=4),
+        MIX([R("数值复核：1e−5 步长扫描得 (0.00001, 1.49999)，与解析解一致 ✓", sz=11, c=GRAY)], after=0),
+    ], sz=11.5, gap=4)
+    return s
+
+
+def s08_q1fig():
+    s = page("第 (1) 问 · 几何直观", "“看得见”的 D(−1)", 8)
+    s.image_fit(0.85, 1.50, 6.35, 4.60, os.path.join(FIG, "fig1_Dminus1.png"))
+    card(s, 7.55, 1.50, 5.15, 4.55, fill=CARD, radius=0.08)
+    s.text(7.85, 1.66, 4.6, 0.34, [P([R("读图三步", sz=14.5, b=True, c=NAVY)])])
+    txt(s, 7.85, 2.06, 4.6, 3.8, [
+        MIX([R("1.  先定位 ", sz=12.5), R("f(−1) = ½", sz=12.5, math=True),
+             R("：在图上作水平虚线 y = ½。", sz=12.5)], after=8),
+        MIX([R("2.  再看哪些 x 让函数“高过”这条线：", sz=12.5)], after=4),
+        MIX([R("      x ∈ (−1, ½)", sz=12.5, b=True, c=GOLD)], after=8),
+        MIX([R("3.  由 ", sz=12.5), R("y − x₀ ∈ D(x₀) ⇔ f(y) > f(x₀)", sz=12.5, math=True),
+             R("，把解集整体平移 +1 个单位，即得", sz=12.5)], after=4),
+        MIX([R("      D(−1) = (0, 3/2)", sz=13, b=True, c=GOLD)], after=10),
+        MIX([R("提示：D(x₀) 中的 d 可正可负。", sz=12, c=GRAY)], after=3),
+        MIX([R("在第 (2) 问里，负方向的 d 会大量出现（例如 D(1) 含 (−∞,−1]）。",
+               sz=12, c=GRAY)], after=0, line=1.25),
+    ], sz=12.5, gap=6)
+    return s
+
+
+def s09_q2a():
+    s = page("第 (2) 问 · 第 1 步", "奇函数延拓：先求解析式，再算三段 D(x₀)", 9)
+    s.image_fit(8.15, 1.55, 4.55, 3.05, os.path.join(FIG, "fig2_odd.png"))
+    card(s, 0.62, 1.45, 7.35, 1.35, fill=CARD, radius=0.08)
+    txt(s, 0.90, 1.58, 6.85, 1.15, [
+        MIX([R("f 为奇函数，且 x < 0 时 f(x) = 2ˣ：", sz=13)], after=6),
+        MIX([R("▪  f(0) = 0；", sz=13, math=True)], after=4),
+        MIX([R("▪  当 x > 0 时，f(x) = −f(−x) = −2⁻ˣ，值域为 (−1, 0)。", sz=13, math=True)], after=0),
+    ], sz=13, gap=5)
+    card(s, 0.62, 2.92, 7.35, 2.18, fill=LBLUE, radius=0.08)
+    s.text(0.90, 3.05, 6.85, 0.32,
+           [P([R("代入定义，可得三段表达式（注意每段都要检查 d<0、d=0、d>0）",
+                sz=12.5, b=True, c=NAVY)])])
+    yy = 3.44
+    for cond, expr in [(r"x_0<0", r"D(x_0)=(0,\,-x_0)"),
+                       (r"x_0=0", r"D(0)=(-\infty,\,0)"),
+                       (r"x_0>0", r"D(x_0)=(-\infty,\,-x_0\,]\cup(0,\,+\infty)")]:
+        s.text(0.95, yy + 0.05, 1.25, 0.32, [P([R(cond.replace("_0", "₀ "), sz=12.5, b=True, c=BLUE)])])
+        fml(s, expr, 2.10, yy, 0.34)
+        yy += 0.52
+    card(s, 8.15, 4.70, 4.55, 1.95, fill=LRED, radius=0.08)
+    s.text(8.45, 4.84, 4.0, 0.32, [P([R("关键提醒", sz=13, b=True, c=RED)])])
+    txt(s, 8.45, 5.20, 4.0, 1.35, [
+        MIX([R("f 在 (−∞,0) 与 (0,+∞) 上分别递增，", sz=11.5)], after=3),
+        MIX([R("但在 R 上并不单调：f(−½) = 0.71 > f(0) = 0。", sz=11.5, math=True)], after=5),
+        MIX([R("所以不能“一步到位”地用单调性，必须分类讨论 —— 这也正是题设 x₁x₂ ≠ 0 的用意。",
+               sz=11.5)], after=0),
+    ], sz=11.5, gap=4)
+    return s
+
+
+def s10_q2b():
+    s = page("第 (2) 问 · 第 2 步", "三类情形逐一验证 D(x₂) ⊆ D(x₁)", 10)
+    rows = [
+        ("情形 ①", "x₁ ≤ x₂ < 0", "D(x₂) = (0, −x₂) ⊆ (0, −x₁) = D(x₁)", GREEN),
+        ("情形 ②", "0 < x₁ ≤ x₂", "D(x₂) = (−∞, −x₂] ∪ (0, ∞) ⊆ (−∞, −x₁] ∪ (0, ∞) = D(x₁)", GREEN),
+        ("情形 ③", "x₂ < 0 < x₁", "x₂ < 0 ⟹ f(x₂) > 0；x₁ > 0 ⟹ f(x₁) < 0，故 f(x₂) > f(x₁) 自动成立；\n"
+                                  "而 D(x₂) = (0, −x₂) ⊆ (0, ∞) ⊆ D(x₁)", GREEN),
+        ("不需讨论", "x₁ < 0 < x₂", "此时 f(x₁) > 0 > f(x₂)，与题设 f(x₁) ≤ f(x₂) 矛盾", GRAY),
+    ]
+    y = 1.48
+    for tag, cond, res, c in rows:
+        h = 1.02 if "\n" in res else 0.86
+        card(s, 0.62, y, 12.1, h, fill=CARD2, radius=0.07)
+        s.rect(0.62, y, 0.08, h, fill=c, radius=0.03)
+        s.text(0.95, y + 0.16, 1.5, 0.34, [P([R(tag, sz=13, b=True, c=c)])])
+        s.text(2.35, y + 0.16, 2.0, 0.34, [P([R(cond, sz=13, b=True, c=NAVY)])])
+        lines = res.split("\n")
+        for j, ln in enumerate(lines):
+            s.text(4.45, y + (0.10 if len(lines) > 1 else 0.20) + j * 0.32, 8.05, 0.32,
+                   [P([R(ln, sz=12, c=TEXT)], after=0, line=1.1)])
+        y += h + 0.14
+    card(s, 0.62, 5.42, 12.1, 1.32, fill=LRED, radius=0.08)
+    s.text(0.95, 5.54, 11.45, 0.32,
+           [P([R("为什么 x₁x₂ ≠ 0 不可省？", sz=13, b=True, c=RED)])])
+    txt(s, 0.95, 5.88, 11.45, 0.8, [
+        MIX([R("取 x₂ = 0 < x₁：则 f(x₁) < 0 = f(0) 满足前提，但 ", sz=12.5),
+             R("D(0) = (−∞, 0) ⊄ (−∞, −x₁] ∪ (0, +∞) = D(x₁)", sz=12.5, math=True),
+             R("—— 反例 d = −x₁/2 ∈ (−x₁, 0)。", sz=12.5)], after=3),
+        MIX([R("数值复核：在 321×2401 网格上，前提“f(x₁) ≤ f(x₂) 且 x₁x₂ ≠ 0”成立的组合中，"
+               "包含关系违例数为 0。", sz=11.5, c=GRAY)], after=0),
+    ], sz=12.5, gap=4)
+    return s
+
+
+def s11_q3i():
+    s = page("第 (3) 问 (i)", "证明 f(0) ≥ 1：反证法 + 只用一次条件①", 11)
+    card(s, 0.62, 1.45, 12.1, 4.0, fill=CARD, radius=0.08)
+    y = 1.62
+    txt(s, 0.95, y, 11.45, 0.4, [
+        MIX([R("第 1 步（反设）", sz=13.5, b=True, c=RED),
+             R("　假设 f(0) < 1。", sz=13.5, math=True)], after=0)])
+    y += 0.42
+    txt(s, 0.95, y, 11.45, 0.4, [
+        MIX([R("第 2 步（找“高点”）", sz=13.5, b=True, c=NAVY),
+             R("　因为 ", sz=13.5), R("lim", sz=13.5, math=True, i=True),
+             R(" x→0⁻ 2ˣ = 1 > f(0)，所以存在 ", sz=13.5),
+             R("p ∈ (−1, 0)", sz=13.5, math=True), R(" 使 ", sz=13.5),
+             R("f(p) = 2ᵖ > f(0)", sz=13.5, math=True), R("。", sz=13.5)], after=0)])
+    y += 0.44
+    txt(s, 0.95, y, 11.45, 0.4, [
+        MIX([R("第 3 步（用一次条件①）", sz=13.5, b=True, c=NAVY),
+             R("　由 ", sz=13.5), R("f(0) ≤ f(p)", sz=13.5, math=True), R(" 得 ", sz=13.5),
+             R("D(p) ⊆ D(0)", sz=13.5, math=True), R("。", sz=13.5)], after=0)])
+    y += 0.44
+    txt(s, 0.95, y, 11.45, 1.10, [
+        MIX([R("第 4 步（落进“雷区”）", sz=13.5, b=True, c=NAVY),
+             R("　任取 ", sz=13.5), R("d ∈ (0, −p)", sz=13.5, math=True),
+             R("（注意 p ∈ (−1,0) ⇒ −p ∈ (0,1)）：", sz=13.5)], after=5),
+        MIX([R("　　由 ", sz=13.5), R("p < p + d < 0", sz=13.5, math=True),
+             R(" 及 2ˣ 在 (−∞,0) 上递增，得 ", sz=13.5),
+             R("f(p+d) = 2^{p+d} > 2ᵖ = f(p)", sz=13.5, math=True),
+             R("，即 ", sz=13.5), R("d ∈ D(p) ⊆ D(0)", sz=13.5, math=True), R("。", sz=13.5)], after=5),
+        MIX([R("　　于是 ", sz=13.5), R("f(d) > f(0)", sz=13.5, math=True),
+             R("；但 ", sz=13.5), R("0 < d < 1", sz=13.5, math=True),
+             R("，与条件②（f(x) < f(0)）矛盾！", sz=13.5)], after=0),
+    ], sz=13.5, gap=5)
+    card(s, 0.62, 5.62, 12.1, 1.12, fill=LGOLD, radius=0.08)
+    txt(s, 0.95, 5.74, 11.45, 0.9, [
+        MIX([R("故假设不成立，", sz=13.5), R("f(0) ≥ 1", sz=14, b=True, c="#8A5B00"),
+             R("。　（证毕）", sz=13.5)], after=5),
+        MIX([R("要点：把 p 取在 (−1, 0) 内，是为了保证 −p ∈ (0,1)，"
+               "让“反例点” d 一定落在条件②的射程 (0,1) 之内。", sz=12.5, c="#8A5B00")], after=0),
+    ], sz=13.5, gap=4)
+    return s
+
+
+def s12_q3ii_plan():
+    s = page("第 (3) 问 (ii) · 总览", "三步走：先“压住符号”，再“读集合”", 12)
+    card(s, 0.62, 1.45, 12.1, 0.95, fill=LBLUE, radius=0.08)
+    txt(s, 0.95, 1.58, 11.45, 0.75, [
+        MIX([R("目标：", sz=13.5, b=True, c=NAVY),
+             R("对任意 ", sz=13.5), R("0 < x₁ < x₂", sz=13.5, math=True),
+             R(" 证明 ", sz=13.5), R("f(x₂) > f(x₁)", sz=13.5, math=True),
+             R("。翻译成集合语言：只需证 ", sz=13.5),
+             R("x₂ − x₁ ∈ D(x₁)", sz=13.5, math=True), R("。", sz=13.5)], after=0)])
+    items = [("第 1 步", "(0,1) 上 f ≤ 0", LRED, RED,
+              ["反证 + f 在 (−∞,0) 上递增", "把 −x₁ 送进 D(a) 制造矛盾"]),
+             ("第 2 步", "(0,+∞) 上 f ≤ 0", LGOLD, GOLD,
+              ["取 m < 0 使 2ᵐ < f(x₁)", "令 n = m − x₁ + ½，把高点平移到 ½"]),
+             ("第 3 步", "收口：f 严格递增", LGREEN, GREEN,
+              ["算出 D(u) = (0, −u]（u < 0）", "由 ① 得 (0,+∞) ⊆ D(v)"])]
+    for i, (tag, title, bg, fc, lines) in enumerate(items):
+        x = 0.62 + i * 4.09
+        card(s, x, 2.62, 3.85, 2.15, fill=bg, radius=0.08)
+        s.rect(x, 2.62, 3.85, 0.46, fill=fc, radius=0.08)
+        s.rect(x, 2.96, 3.85, 0.12, fill=fc)
+        s.text(x + 0.22, 2.71, 3.4, 0.3, [P([R(tag, sz=13, b=True, c=WHITE)])])
+        s.text(x + 0.22, 3.20, 3.45, 0.34, [P([R(title, sz=14, b=True, c=fc)])])
+        txt(s, x + 0.22, 3.62, 3.45, 1.0, [("▪  " + ln) for ln in lines], sz=11.5, gap=5)
+    card(s, 0.62, 5.02, 12.1, 1.72, fill=CARD, radius=0.08)
+    s.text(0.95, 5.14, 11.45, 0.32,
+           [P([R("为什么必须绕这么大一圈？", sz=13, b=True, c=NAVY)])])
+    txt(s, 0.95, 5.50, 11.45, 1.15, [
+        MIX([R("▪  抽象函数没有解析式，能用的只有两样东西：", sz=12.5),
+             R("x < 0 时 f(x) = 2ˣ", sz=12.5, math=True),
+             R("，以及条件 ①②；", sz=12.5)], after=4),
+        MIX([R("▪  条件① 是“函数值大小 ⇔ 集合包含”的桥梁，"
+               "但它总是把结论推到“另一个点的函数值”上，所以需要先锁定符号（f ≤ 0），"
+               "再让集合关系直接给出单调性。", sz=12.5)], after=0),
+    ], sz=12.5, gap=4)
+    return s
+
+
+def s13_step1():
+    s = page("第 (3) 问 (ii) · 第 1 步", "先证：(0,1) 上 f(x) ≤ 0", 13)
+    card(s, 0.62, 1.45, 12.1, 4.15, fill=CARD, radius=0.08)
+    txt(s, 0.95, 1.60, 11.45, 0.4, [
+        MIX([R("反设", sz=13.5, b=True, c=RED),
+             R("　存在 ", sz=13.5), R("x₁ ∈ (0,1)", sz=13.5, math=True),
+             R(" 使 ", sz=13.5), R("f(x₁) > 0", sz=13.5, math=True), R("。", sz=13.5)], after=0)])
+    steps = [
+        ("①", "取 a < 0 使 f(a) = 2ᵃ < f(x₁)", "（因 2ᵃ → 0，这样的 a 一定存在）"),
+        ("②", "由条件①得 D(x₁) ⊆ D(a)", "（x₁ = a 时 f(a) < f(x₁)，套用 ①）"),
+        ("③", "−x₁ ∈ D(x₁)", "（因为 f(x₁ + (−x₁)) = f(0) > f(x₁)，用了条件②）"),
+        ("④", "于是 −x₁ ∈ D(a)，即 f(a − x₁) > f(a) = 2ᵃ",
+         "（D(x₁) ⊆ D(a) 把成员关系传递过去）"),
+        ("⑤", "但 a − x₁ < a < 0，而 x < 0 时 f(x) = 2ˣ 严格递增",
+         "故 f(a − x₁) = 2^{a − x₁} < 2ᵃ，矛盾！"),
+    ]
+    y = 2.10
+    for tag, main, note in steps:
+        s.rect(0.95, y, 0.36, 0.36, fill=NAVY, radius=0.18)
+        s.text(0.95, y + 0.055, 0.36, 0.28,
+               [P([R(tag, sz=12.5, b=True, c=WHITE)], align="c", after=0)])
+        s.text(1.48, y + 0.01, 6.3, 0.34, [P([R(main, sz=13, c=TEXT)], after=0)])
+        s.text(7.85, y + 0.03, 4.6, 0.34, [P([R(note, sz=11.5, c=GRAY)], after=0, line=1.1)])
+        y += 0.52
+    card(s, 0.62, 5.75, 12.1, 1.0, fill=LGREEN, radius=0.08)
+    txt(s, 0.95, 5.88, 11.45, 0.8, [
+        MIX([R("结论：", sz=13.5, b=True, c=GREEN),
+             R("对一切 ", sz=13.5), R("x ∈ (0,1)", sz=13.5, math=True),
+             R(" 都有 ", sz=13.5), R("f(x) ≤ 0", sz=13.5, math=True),
+             R("。（证毕）　（配合 (3)(i) 的 f(0) ≥ 1，这一步把 (0,1) 变成了一块“没有正值的雷区”。）",
+               sz=13.5)], after=0)])
+    return s
+
+
+def s14_step2():
+    s = page("第 (3) 问 (ii) · 第 2 步", "再证：(0,+∞) 上 f(x) ≤ 0 —— 全题的“神来之笔”", 14)
+    card(s, 0.62, 1.42, 7.35, 3.35, fill=CARD, radius=0.08)
+    txt(s, 0.92, 1.53, 6.8, 0.36, [
+        MIX([R("反设", sz=12.5, b=True, c=RED),
+             R("　存在 ", sz=12.5), R("x₁ > 0", sz=12.5, math=True),
+             R(" 使 ", sz=12.5), R("f(x₁) > 0", sz=12.5, math=True),
+             R("；", sz=12.5)], after=0)])
+    txt(s, 0.92, 1.85, 6.8, 0.32, [
+        MIX([R("（0 < x₁ < 1 的情形已由第 1 步排除，故只需讨论 x₁ ≥ 1）", sz=11, c=GRAY)], after=0)])
+    steps = [
+        ("①", "取 m < 0 使 2ᵐ < f(x₁)", "由 ①（f(m) ≤ f(x₁)）得 D(x₁) ⊆ D(m)"),
+        ("②", "x₁ − m ∈ D(m)", "因为 f(m + (x₁ − m)) = f(x₁) > f(m)"),
+        ("③", "取 n = m − x₁ + ½", "x₁ ≥ 1 > ½ ⟹ n < m ⟹ f(n) = 2ⁿ < 2ᵐ = f(m)，再由 ① 得 D(m) ⊆ D(n)"),
+        ("④", "故 x₁ − m ∈ D(m) ⊆ D(n)", "代入得 f(n + x₁ − m) > f(n) = 2ⁿ > 0"),
+        ("⑤", "而 n + x₁ − m = ½ ∈ (0,1)", "与第 1 步的 f(½) ≤ 0 矛盾！"),
+    ]
+    y = 2.28
+    for tag, main, note in steps:
+        s.rect(0.92, y, 0.34, 0.34, fill=GOLD, radius=0.17)
+        s.text(0.92, y + 0.05, 0.34, 0.26,
+               [P([R(tag, sz=12, b=True, c=WHITE)], align="c", after=0)])
+        s.text(1.42, y - 0.01, 3.15, 0.30, [P([R(main, sz=12, c=TEXT)], after=0, line=1.05)])
+        s.text(4.72, y + 0.01, 3.05, 0.44, [P([R(note, sz=10.5, c=GRAY)], after=0, line=1.15)])
+        y += 0.48
+    card(s, 8.15, 1.42, 4.57, 3.35, fill=CARD2, line=LINE, radius=0.08)
+    s.text(8.40, 1.54, 4.1, 0.32,
+           [P([R("“同一个 d” 的平移示意", sz=12.5, b=True, c=NAVY)])])
+    s.image_fit(8.35, 1.95, 4.15, 1.55, os.path.join(FIG, "fig3_shift.png"))
+    txt(s, 8.40, 3.62, 4.1, 1.05, [
+        MIX([R("d = x₁ − m 同时把 m 送到 x₁、把 n 送到 ½：一次平移，两处落点。", sz=10.5)], after=4),
+        MIX([R("选 n 的方法并不神秘：先定 m，再要求 m + d ∈ (0,1)。", sz=10.5, c=GRAY)], after=0),
+    ], sz=10.5, gap=4)
+    card(s, 0.62, 4.95, 12.1, 1.60, fill=LGOLD, radius=0.08)
+    txt(s, 0.95, 5.08, 11.45, 1.4, [
+        MIX([R("一句话：", sz=13, b=True, c="#8A5B00"),
+             R("把 x₁ 处的“正值”沿同一个 d 平移，让它落在 ½ 处 —— 正好掉进条件②控制的 (0,1)。",
+               sz=13)], after=6),
+        MIX([R("结论：对一切 x > 0 都有 f(x) ≤ 0。", sz=13, b=True, c=GREEN)], after=6),
+        MIX([R("这一步是全题唯一需要“主动构造”的地方：条件①只能搬动函数值，不能改变函数值，"
+               "所以必须借助 x < 0 上已知的 2ˣ 作为“跳板”。", sz=11.5, c=GRAY)], after=0),
+    ], sz=13, gap=5)
+    return s
+
+
+def s15_step3():
+    s = page("第 (3) 问 (ii) · 第 3 步", "收口：由“非正”读出单调递增", 15)
+    card(s, 0.62, 1.45, 6.0, 2.55, fill=LBLUE, radius=0.08)
+    s.text(0.92, 1.58, 5.4, 0.32,
+           [P([R("先算出 u < 0 时的 D(u)", sz=13.5, b=True, c=NAVY)])])
+    txt(s, 0.92, 1.96, 5.5, 1.95, [
+        MIX([R("此时 f(u) = 2ᵘ ∈ (0,1)，逐段检查增量 d：", sz=12)], after=5),
+        MIX([R("▪  d ≤ 0：", sz=12), R("u+d ≤ u ⇒ 2^{u+d} ≤ 2ᵘ", sz=12, math=True),
+             R(" ×", sz=12, c=RED)], after=4),
+        MIX([R("▪  0 < d < −u：", sz=12), R("2^{u+d} > 2ᵘ", sz=12, math=True), R(" ✓", sz=12, c=GREEN)], after=4),
+        MIX([R("▪  d = −u：", sz=12), R("f(0) ≥ 1 > 2ᵘ", sz=12, math=True), R(" ✓", sz=12, c=GREEN)], after=4),
+        MIX([R("▪  d > −u：", sz=12), R("u+d > 0 ⇒ f(u+d) ≤ 0 < 2ᵘ", sz=12, math=True),
+             R(" ×", sz=12, c=RED)], after=6),
+        MIX([R("⇒  D(u) = (0, −u]", sz=13, b=True, c=NAVY)], after=0),
+    ], sz=12, gap=4)
+    card(s, 6.82, 1.45, 5.9, 2.55, fill=LGREEN, radius=0.08)
+    s.text(7.12, 1.58, 5.3, 0.32,
+           [P([R("再用一次条件①（关键）", sz=13.5, b=True, c=GREEN)])])
+    txt(s, 7.12, 1.96, 5.35, 1.95, [
+        MIX([R("对任意 v > 0 与任意 u < 0：", sz=12)], after=5),
+        MIX([R("f(v) ≤ 0 < 2ᵘ = f(u)", sz=12, math=True)], after=5),
+        MIX([R("由 ①（x₁ = v, x₂ = u）：D(u) ⊆ D(v)", sz=12, math=True)], after=5),
+        MIX([R("⇒ (0, −u] ⊆ D(v)", sz=12, math=True)], after=5),
+        MIX([R("令 u → −∞（即 −u → +∞），得", sz=12)], after=5),
+        MIX([R("(0, +∞) ⊆ D(v)　对一切 v > 0 成立", sz=13, b=True, c=GREEN)], after=0),
+    ], sz=12, gap=4)
+    card(s, 0.62, 4.18, 12.1, 2.55, fill=LGOLD, radius=0.08)
+    s.text(0.95, 4.32, 11.45, 0.34,
+           [P([R("收口：把“集合包含”翻译回“函数值”", sz=14, b=True, c="#8A5B00")])])
+    txt(s, 0.95, 4.74, 11.45, 1.85, [
+        MIX([R("任取 ", sz=13.5), R("0 < x₁ < x₂", sz=13.5, math=True),
+             R("，则 ", sz=13.5), R("d = x₂ − x₁ > 0", sz=13.5, math=True),
+             R("，由上一步 ", sz=13.5), R("(0, +∞) ⊆ D(x₁)", sz=13.5, math=True),
+             R(" 得 ", sz=13.5), R("d ∈ D(x₁)", sz=13.5, math=True), R("，", sz=13.5)], after=6),
+        MIX([R("即 ", sz=13.5), R("f(x₁ + d) = f(x₂) > f(x₁)", sz=13.5, math=True),
+             R("。", sz=13.5)], after=6),
+        MIX([R("所以 f(x) 在区间 (0, +∞) 上单调递增。　（证毕）", sz=14.5, b=True, c=GREEN)], after=6),
+        MIX([R("结构回顾：第 1 步得到 (0,1) 的“雷区” → 第 2 步把整个 (0,+∞) 压成非正 → "
+               "第 3 步让 D(u) = (0,−u] 与条件①合流，直接把“非正”升级为“严格递增”。",
+               sz=12, c=GRAY)], after=0),
+    ], sz=13.5, gap=5)
+    return s
+
+
+def s16_characterization():
+    s = page("结论升华", "条件①②的“完整刻画”（充要条件）", 16)
+    card(s, 0.62, 1.45, 12.1, 1.5, fill=LBLUE, radius=0.08)
+    txt(s, 0.95, 1.58, 11.45, 1.3, [
+        MIX([R("定理　", sz=14, b=True, c=NAVY),
+             R("在题设（f 定义域为 R，且 x < 0 时 f(x) = 2ˣ）之下，下面两条等价：", sz=14)], after=6),
+        MIX([R("（A）f 满足条件 ① 与 ②；", sz=13.5)], after=4),
+        MIX([R("（B）", sz=13.5), R("f(0) ≥ 1", sz=13.5, math=True),
+             R("，且 ", sz=13.5), R("f(x) ≤ 0", sz=13.5, math=True),
+             R(" 在 (0, +∞) 上恒成立、并在此区间上严格递增。", sz=13.5)], after=0),
+    ])
+    card(s, 0.62, 3.10, 6.0, 1.75, fill=LGREEN, radius=0.08)
+    s.text(0.92, 3.22, 5.4, 0.32, [P([R("必要性（A ⇒ B）", sz=13.5, b=True, c=GREEN)])])
+    txt(s, 0.92, 3.58, 5.45, 1.2, [
+        "▪  f(0) ≥ 1 就是第 (3)(i) 问；",
+        "▪  f ≤ 0 on (0,+∞) 由第 1、2 步给出；",
+        "▪  严格递增就是第 (3)(ii)。",
+    ], sz=11.5, gap=4)
+    card(s, 6.72, 3.10, 6.0, 1.75, fill=LGOLD, radius=0.08)
+    s.text(7.02, 3.22, 5.4, 0.32, [P([R("充分性（B ⇒ A）", sz=13.5, b=True, c="#8A5B00")])])
+    txt(s, 7.02, 3.58, 5.45, 1.2, [
+        "▪  把三段 D(x₀) 的表达式代回条件①，按 u、v 的符号逐类验证即可（见第 9 页表达式）；",
+        "▪  条件② 由 f(x) ≤ 0 < 1 ≤ f(0) 立即成立。",
+    ], sz=11.5, gap=4)
+    s.image_fit(8.30, 4.88, 4.30, 2.05, os.path.join(FIG, "fig4_family.png"))
+    card(s, 0.62, 4.95, 7.25, 2.0, fill=CARD, radius=0.08)
+    s.text(0.92, 5.06, 6.7, 0.32, [P([R("例子与反例（数值实验佐证）", sz=13, b=True, c=NAVY)])])
+    txt(s, 0.92, 5.42, 6.7, 1.45, [
+        MIX([R("▪  正例：f(x) = 2ˣ (x<0)，f(0) = 1，f(x) = −1/x (x>0) 满足 ①②；"
+               "在 201×201 网格上找不到反例。", sz=11.5)], after=4),
+        MIX([R("▪  反例：f(x) = 1 − x (x ≥ 0) 不满足 ①；数值上给出的反例是 "
+               "(u, v, d) = (−3, 0.8, −3)。", sz=11.5)], after=4),
+        MIX([R("▪  直观：① 既要求 (0,+∞) 上没有正值，也要求那里不能“平”不能“降”。",
+               sz=11.5, c=GRAY)], after=0),
+    ], sz=11.5, gap=4)
+    return s
+
+
+def s17_verify():
+    r = load_report()
+    e1 = r.get("exp1", {})
+    e4 = r.get("exp4", {})
+    s = page("数值校验", "用数值实验给结论“上保险”", 17)
+    rows = [
+        ("实验 1", "第 (1) 问",
+         "解析解 (0, 3/2) 与 1e−5 步长扫描 (%.5f, %.5f) 完全一致；端点 d = 1 在内、"
+         "d = 3/2 不在内 ✓" % (e1.get("numeric", [0, 1.5])[0], e1.get("numeric", [0, 1.5])[1]), GREEN),
+        ("实验 2", "第 (2) 问",
+         "三段 D(x₀) 表达式在 2401 个格点上零不符；321×2401 网格上“f(x₁) ≤ f(x₂) 且 x₁x₂ ≠ 0”"
+         "的包含关系零违例；去掉 x₁x₂ ≠ 0 立刻出现反例（x₁ = 1, x₂ = 0, d = −0.995）✓", GREEN),
+        ("实验 3", "条件①的筛选力",
+         "f = 1−x、f = 2ˣ−1、f = −x 三种候选都被 ① 抓到反例；只有 f = −1/x 通过 ✓", GREEN),
+        ("实验 4a", "充分性（B ⇒ A）",
+         "允许族随机取样 %d 个（f(0)≥1，(0,+∞) 上递增且非正）→ 全部通过 ①② ✓"
+         % e4.get("valid_family_both_ok", 0), GREEN),
+        ("实验 4b", "必要性（A ⇒ B）",
+         "定向扰动 %d×3 个 → 全部被 ① 抓住（正值凸起、下降段由网格抓；f(0)<1 的 %d 个由反证"
+         "构造抓出）✓"
+         % (e4.get("n_perturb_each", 0), e4.get("perturbed", {}).get("small_f0", [0, 0])[1]), GREEN),
+        ("实验 4c", "条件的强度",
+         "%d 个随机分段线性函数中，同时通过 ①② 的有 %d 个 —— 条件②+① 非常“紧”"
+         % (e4.get("n_random", 0), e4.get("random_both_ok", 0)), GOLD),
+    ]
+    y = 1.45
+    for tag, title, res, c in rows:
+        card(s, 0.62, y, 12.1, 0.78, fill=CARD2, radius=0.07)
+        s.rect(0.62, y, 0.075, 0.78, fill=c, radius=0.03)
+        s.text(0.92, y + 0.10, 1.15, 0.3, [P([R(tag, sz=12.5, b=True, c=c)])])
+        s.text(2.05, y + 0.10, 1.75, 0.3, [P([R(title, sz=12.5, b=True, c=NAVY)])])
+        s.text(3.80, y + 0.07, 8.7, 0.66, [P([R(res, sz=11, c=TEXT)], after=0, line=1.25)])
+        y += 0.84
+    s.text(0.62, 6.50, 12.1, 0.42,
+           [P([R("说明：数值实验只对结论作“佐证”，不能代替第二至五页的严格证明；"
+                 "所有网格取样步长与样本量均记录在实验设置中。", sz=11, c=GRAY)])])
+    return s
+
+
+def s18_method():
+    s = page("方法提炼", "可迁移的四条经验 + 易错清单", 18)
+    card(s, 0.62, 1.45, 5.9, 4.45, fill=LBLUE, radius=0.08)
+    s.text(0.92, 1.58, 5.3, 0.32, [P([R("四条可迁移的经验", sz=14, b=True, c=NAVY)])])
+    txt(s, 0.92, 1.98, 5.35, 3.8, [
+        MIX([R("1.  新定义先“翻译”。", sz=12.5, b=True),
+             R("把 D(x₀) 读成“让 f 变大的增量集合”，再用 y = x₀ + d 换元，"
+               "就有 y − x₀ ∈ D(x₀) ⇔ f(y) > f(x₀)。", sz=12.5)], after=9),
+        MIX([R("2.  条件①只有一个套路。", sz=12.5, b=True),
+             R("f(u) ≤ f(v) 且 f(t) > f(v) ⇒ f(u + t − v) > f(u)；"
+               "本质是“把高点平移过去仍是高点”。", sz=12.5)], after=9),
+        MIX([R("3.  要证单调，就证“增量属于 D”。", sz=12.5, b=True),
+             R("x₂ − x₁ ∈ D(x₁) ⇔ f(x₂) > f(x₁)，把函数问题变成集合问题。", sz=12.5)], after=9),
+        MIX([R("4.  抽象函数要“落到已知区域”。", sz=12.5, b=True),
+             R("全题唯一已知的解析式是 x < 0 时的 2ˣ，所以所有构造（−x₁、a − x₁、"
+               "m、n = m − x₁ + ½）都指向负半轴或 (0,1)。", sz=12.5)], after=0),
+    ], sz=12.5, gap=6)
+    card(s, 6.82, 1.45, 5.9, 4.45, fill=LRED, radius=0.08)
+    s.text(7.12, 1.58, 5.3, 0.32, [P([R("易错清单", sz=14, b=True, c=RED)])])
+    txt(s, 7.12, 1.98, 5.35, 3.8, [
+        MIX([R("①  把“分段递增”当成“整体递增”。", sz=12.5, b=True),
+             R("奇函数延拓后 f(−½) = 0.71 > f(0) = 0，必须分类讨论。", sz=12.5)], after=9),
+        MIX([R("②  丢掉 x₁x₂ ≠ 0。", sz=12.5, b=True),
+             R("x₂ = 0 时前提成立而结论失败（D(0) = (−∞,0) 不含 (−x₁,0)）。", sz=12.5)], after=9),
+        MIX([R("③  只考虑 d > 0。", sz=12.5, b=True),
+             R("d < 0 同样可以属于 D(x₀)：第 (1) 问的 (0,1)、第 (2) 问的 (−∞,−x₀] 都来自 d < 0。",
+               sz=12.5)], after=9),
+        MIX([R("④  反证中的取值“越界”。", sz=12.5, b=True),
+             R("p 必须取在 (−1,0) 内（保证 −p ∈ (0,1)）；m 必须满足 2ᵐ < f(x₁)。", sz=12.5)], after=9),
+        MIX([R("⑤  忽略端点开闭。", sz=12.5, b=True),
+             R("D(−1) = (0, 3/2)：d = 1 取得到，d = 3/2 取不到。", sz=12.5)], after=0),
+    ], sz=12.5, gap=6)
+    return s
+
+
+def s19_end():
+    s = Slide(bg=NAVY)
+    s.rect(0, 0, SW, SH, fill=NAVY)
+    s.rect(0, 0, SW, 0.16, fill=GOLD)
+    s.rect(1.0, 1.35, 0.13, 1.0, fill=GOLD)
+    s.text(1.35, 1.25, 11.0, 0.9,
+           [P([R("一题三问，层层加码", sz=34, b=True, c=WHITE)])])
+    s.text(1.35, 2.15, 11.0, 0.6,
+           [P([R("翻译定义 → 计算集合 → 分类讨论 → 反证取值 → 构造平移 → 归纳刻画",
+                 sz=16, c="#CFE0EF")])])
+    s.rect(1.38, 2.88, 2.6, 0.04, fill=GOLD)
+    rows = [("第 (1) 问", "D(−1) = (0, 3/2)", "分段函数：翻译定义 + 解两个不等式，端点开闭需逐一核对"),
+            ("第 (2) 问", "D(x₂) ⊆ D(x₁)", "三段 D(x₀)（x₀<0 / x₀=0 / x₀>0）+ 按符号分类讨论"),
+            ("第 (3) 问 (i)", "f(0) ≥ 1", "反证 + 只用一次条件①：把 −p 送进 (0,1) 与条件②相撞"),
+            ("第 (3) 问 (ii)", "f 在 (0,+∞) 严格递增",
+             "先证 (0,1) 上 f ≤ 0，再证 (0,+∞) 上 f ≤ 0，最后由 (0,+∞) ⊆ D(v) 收口")]
+    y = 3.30
+    for tag, res, note in rows:
+        s.rect(1.35, y, 10.6, 0.66, fill="#16395F", line="#2A5480", radius=0.07)
+        s.text(1.58, y + 0.18, 1.75, 0.3, [P([R(tag, sz=11.5, b=True, c=GOLD)])])
+        s.text(3.35, y + 0.16, 3.1, 0.34, [P([R(res, sz=13, b=True, c=WHITE)])])
+        s.text(6.55, y + 0.13, 5.25, 0.46, [P([R(note, sz=10.5, c="#9FC4E4")], after=0, line=1.18)])
+        y += 0.72
+    s.text(1.35, 6.28, 11.0, 0.34,
+           [P([R("完整刻画：f 满足 ①② ⇔ f(0) ≥ 1，且 f 在 (0, +∞) 上取值非正、严格递增。",
+                 sz=12.5, b=True, c="#E7C37A")])])
+    s.text(1.35, 6.72, 11.0, 0.34,
+           [P([R("压轴题考的不是“见过”，而是现场把新定义翻译成旧知识的能力。",
+                 sz=13.5, b=True, c=WHITE)])])
+    return s
+
+
+# ================================================================== 主流程
+def build():
+    slides = [s01_cover(), s02_toc(), s03_problem(), s04_source(), s05_translate(),
+              s06_roadmap(), s07_q1(), s08_q1fig(), s09_q2a(), s10_q2b(),
+              s11_q3i(), s12_q3ii_plan(), s13_step1(), s14_step2(), s15_step3(),
+              s16_characterization(), s17_verify(), s18_method(), s19_end()]
+    assert len(slides) == TOTAL, (len(slides), TOTAL)
+    render_pptx(slides, PPTX_OUT)
+    print("PPTX 已生成:", PPTX_OUT)
+    render_previews(slides, PREVIEW_DIR)
+    return PPTX_OUT
+
+
+def run_deck():
+    """生成 ai_agent_demo.pptx 并渲染 PNG 预览（含排版自检）。"""
+    return build()
+
+
+# ==============================================================================
+# 主流程
+# ==============================================================================
+def main():
+    print("=" * 84)
+    print("2026 新课标全国Ⅰ卷 数学第 19 题（压轴题）· 一键生成")
+    print("=" * 84)
+    print("工作目录 :", ROOT)
+    print("中文字体 :", TTF_R or "未找到（插图/预览中的中文可能显示为方块）")
+    print("-" * 84)
+    run_verification()
+    print("-" * 84)
+    run_figures()
+    print("-" * 84)
+    run_deck()
+    print("-" * 84)
+    print("全部完成。最终文件:", PPTX_OUT)
+
+
+if __name__ == "__main__":
+    main()
