@@ -1,0 +1,198 @@
+"""2025 年全国一卷数学第 19 题：可复现的数值验证。
+
+仅使用 Python 标准库，兼容 Python 3.8 及以上版本。
+运行：python 验证代码.py --output 验证结果.txt
+有限采样与浮点计算仅用于自检，不能替代数学证明。
+本程序由本次对话中的 AI 助手编写。
+"""
+
+import argparse
+import hashlib
+import math
+import platform
+import random
+from pathlib import Path
+PI = math.pi
+TAU = 2 * PI
+TARGET = 3 * math.sqrt(3)
+TOL = 1e-9
+SEED = 20250119
+
+
+def f(x, phi=0.0):
+    """直接计算原题表达式。"""
+    return 5 * math.cos(x) - math.cos(5 * x + phi)
+
+
+def derivative(x, phi=0.0):
+    return -5 * math.sin(x) + 5 * math.sin(5 * x + phi)
+
+
+def witness(a, theta):
+    """按第二问证明构造 y；与调用者的余弦不等式检查相分离。"""
+if not 0 < theta < PI:
+        raise ValueError("theta 必须位于 (0, pi)")
+    # a = center + r，其中 r 位于 [-pi, pi)。
+    k = math.floor((a + PI) / TAU)
+    center = k * TAU
+    r = a - center
+    if abs(r) >= theta:
+        return a
+    return center + theta if r >= 0 else center - theta
+
+
+def maximum_for_phase(phi):
+    """枚举一个周期内全部驻点及端点，不使用待验证的最大值公式。
+
+    f'_phi(x)=0 等价于 sin(5x+phi)=sin(x)，因此：
+    x=(2k*pi-phi)/4 或 x=((2k+1)*pi-phi)/6。
+    phi 归一化到 [0,2pi) 后，以下整数范围覆盖全部候选点。
+    """
+    phase = phi % TAU
+    points = [0.0, TAU]
+ for k in range(-12, 13):
+        for x in ((2 * k * PI - phase) / 4,
+                  ((2 * k + 1) * PI - phase) / 6):
+            if 0 <= x <= TAU:
+                points.append(x)
+    x_best = max(points, key=lambda x: f(x, phase))
+    residual = max(abs(derivative(x, phase)) for x in points[2:])
+    return f(x_best, phase), x_best, residual
+
+def verify():
+    lines = []
+    checks = []
+
+    def say(message=""):
+        lines.append(message)
+
+    def check(label, condition, detail):
+        checks.append(bool(condition))
+        say("[{}] {}：{}".format("PASS" if condition else "FAIL", label, detail))
+
+    say("2025 年全国一卷数学第 19 题：数值验证运行结果")
+    say("运行环境：Python " + platform.python_version())
+    say("代码 SHA-256：" + hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
+    say("计算方式：Python float（双精度）；常规判定容差 1e-9。")
+    say("固定随机种子：{}；所有角度均以弧度计。".format(SEED))
+    say("理论目标 3*sqrt(3) = {:.15f}".format(TARGET))
+    say("说明：PASS 仅表示所列数值检查通过，不能替代数学证明。")
+ say("\n一、第一问：区间 [0, pi/4] 的最大值")
+    n = 60000
+    points = [PI * i / (4 * n) for i in range(n + 1)]
+    x_best = max(points, key=f)
+    grid_max = f(x_best)
+    check("60001 点扫描", abs(grid_max - TARGET) <= TOL,
+          "最大值 {:.15f}，x = {:.15f}".format(grid_max, x_best))
+    check("等号点 x=pi/6", abs(f(PI / 6) - TARGET) <= TOL,
+          "函数值 {:.15f}，误差 {:.3e}".format(f(PI / 6), abs(f(PI / 6) - TARGET)))
+    left = [derivative((PI / 6) * (i + 0.5) / 1000) for i in range(1000)]
+    right = [derivative(PI / 6 + (PI / 12) * (i + 0.5) / 1000) for i in range(1000)]
+    check("导数符号", min(left) > 0 and max(right) < 0,
+          "两侧各取 1000 个内点，左侧导数全正，右侧全负")
+    h = 1e-6
+    diff_error = max(abs((f(x + h) - f(x - h)) / (2 * h) - derivative(x))
+                     for x in points[::60])
+    check("导数与中心差分交叉核对", diff_error < 1e-7,
+          "1001 点最大误差 {:.3e}，差分步长 1e-6，容差 1e-
+7".format(diff_error))
+
+    say("\n二、第二问：检验所构造的 y")
+    rng = random.Random(SEED)
+    cases = [(rng.uniform(-100 * PI, 100 * PI), rng.uniform(1e-6, PI - 1e-6))
+             for _ in range(5000)]
+    thetas = [1e-6, PI / 12, PI / 6, PI / 2, 5 * PI / 6, PI - 1e-6]
+    for theta in thetas:
+        for k in [-10, -1, 0, 1, 10]:
+            for offset in [0, theta, -theta, theta / 2, -theta / 2, PI, -PI]:
+                cases.append((k * TAU + offset, theta))
+    interval_error = 0.0
+    cosine_error = 0.0
+    for a, theta in cases:
+        y = witness(a, theta)
+        interval_error = max(interval_error, abs(y - a) - theta)
+        cosine_error = max(cosine_error, math.cos(y) - math.cos(theta))
+    check("构造点位于指定区间", interval_error <= TOL,
+          "{} 组，最大区间越界量 {:.3e}".format(len(cases), interval_error))
+ check("构造点满足余弦不等式", cosine_error <= TOL,
+          "最大正向违反量 {:.3e}；含 theta 接近 0、pi 及区间端点情形".format(cosine_error))
+    say("接近端点时浮点数可能无法区分极小差异，此处按所列绝对容差检查。")
+
+    say("\n三、第三问：任意相位下的下界构造")
+    phases = [TAU * i / 720 for i in range(721)]
+    extra_phases = [-20 * PI, -PI, -1e-6, 1e-6, PI - 1e-6, PI + 1e-6, 20 * PI]
+    lower_values = []
+    max_x_violation = 0.0
+    max_cos_violation = 0.0
+    for phi in phases + extra_phases:
+        y = witness(phi, 5 * PI / 6)
+        x = (y - phi) / 5
+        lower_values.append(f(x, phi))
+        max_x_violation = max(max_x_violation, abs(x) - PI / 6)
+        max_cos_violation = max(max_cos_violation, math.cos(5 * x + phi) + math.sqrt(3) / 2)
+    check("第二问在第三问中的应用", max_x_violation <= TOL and max_cos_violation <= TOL,
+          "{} 个相位均满足 x 位于 [-pi/6,pi/6] 及相应余弦条件".format(len(lower_values)))
+ check("下界构造", min(lower_values) >= TARGET - TOL,
+          "构造点函数值的最小值 {:.15f}，与目标差 {:.3e}".format(
+              min(lower_values), min(lower_values) - TARGET))
+
+    say("\n四、第三问：取 phi=0 时的全周期检查")
+    full_n = 120000
+    full_points = [TAU * i / full_n for i in range(full_n + 1)]
+    full_max = max(f(x) for x in full_points)
+    full_min = min(f(x) for x in full_points)
+    check("全周期 120001 点扫描", full_max <= TARGET + TOL and full_min >= -TARGET - TOL,
+          "最小值 {:.15f}，最大值 {:.15f}".format(full_min, full_max))
+    identity_error = max(abs(f(x) - (20 * math.cos(x) ** 3 - 16 * math.cos(x) ** 5))
+                         for x in full_points[::12])
+    check("五倍角变换交叉核对", identity_error <= TOL,
+          "10001 点最大误差 {:.3e}".format(identity_error))
+    zero_max, zero_x, _ = maximum_for_phase(0)
+    check("phi=0 的全部驻点与端点比较", abs(zero_max - TARGET) <= TOL,
+          "最大值 {:.15f}，一个取值点 x={:.15f}".format(zero_max, zero_x))
+ say("\n五、不同 phi 下的全局最大值实验")
+    say("函数对 x 的周期为 2*pi；在一个周期内枚举全部驻点与端点。")
+    say("phi                 max_x f_phi(x)       一个最大值点 x")
+    for label, phi in [("0", 0), ("pi/6", PI / 6), ("pi/3", PI / 3),
+                       ("pi/2", PI / 2), ("pi", PI), ("3*pi/2", 3 * PI / 2),
+                       ("2*pi", TAU)]:
+        value, x, _ = maximum_for_phase(phi)
+        say("{:<18}  {:.12f}      {:.12f}".format(label, value, x))
+    records = [(phi,) + maximum_for_phase(phi) for phi in phases]
+    best = min(records, key=lambda row: row[1])
+    check("721 个相位扫描", abs(best[1] - TARGET) <= TOL and
+          all(row[1] >= TARGET - TOL for row in records),
+          "采样相位中的最小最大值 {:.15f}，一个对应相位 phi={:.12f}".format(best[1], best[0]))
+    residual = max(row[3] for row in records)
+    check("候选驻点的导数残差", residual <= TOL,
+          "最大残差 {:.3e}".format(residual))
+    max_grid_gap = 0.0
+    grid_consistent = True
+    for phi in phases[::20]:
+        exact_value, _, _ = maximum_for_phase(phi)
+ sampled_value = max(f(TAU * i / 20000, phi) for i in range(20001))
+        gap = exact_value - sampled_value
+        max_grid_gap = max(max_grid_gap, gap)
+        grid_consistent = grid_consistent and -TOL <= gap <= 1e-5
+    check("驻点法与独立密集采样交叉核对", grid_consistent,
+          "37 个相位各扫描 20001 点，最大值差距最大 {:.3e}，允许采样误差 1e-5".format(max_grid_gap))
+
+    passed = sum(checks)
+    say("\n检查汇总：{}/{} 项通过。".format(passed, len(checks)))
+    say("结论：" + ("本次数值实验与第一问最大值、第三问最小上界均为 3*sqrt(3) 一致。"
+                        if all(checks) else "存在检查失败，请核查实现或数值精度。"))
+    say("范围限制：有限采样不能证明对所有实数或所有相位成立；完整结论以书面数学证明为准。")
+    return "\n".join(lines) + "\n", all(checks)
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output", type=Path, help="将实际运行报告另存为 UTF-8 文本")
+    args = parser.parse_args()
+    report, ok = verify()
+    if args.output:
+        args.output.write_text(report, encoding="utf-8")
+    print(report)
+    return 0 if ok else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
