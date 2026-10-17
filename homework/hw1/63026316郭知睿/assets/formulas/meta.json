@@ -1,0 +1,191 @@
+[
+ {
+  "id": "cover_r2",
+  "w": 110.0359,
+  "h": 42.0053,
+  "tex": "\\int_0^1|f|^2dx=N",
+  "size": 17
+ },
+ {
+  "id": "cover_r4",
+  "w": 162.758,
+  "h": 42.0053,
+  "tex": "\\int_0^1|f|^4dx=2N^2-N",
+  "size": 17
+ },
+ {
+  "id": "cover_r1",
+  "w": 133.09640000000002,
+  "h": 43.843,
+  "tex": "\\int_0^1|f|dx\\geq\\frac{1}{2\\sqrt N}",
+  "size": 17
+ },
+ {
+  "id": "p2_cond",
+  "w": 344.2971,
+  "h": 21,
+  "tex": "n_1+n_2=n_3+n_4\\ \\Longrightarrow\\ n_1\\in\\{n_3,n_4\\}",
+  "size": 21
+ },
+ {
+  "id": "p2_f",
+  "w": 187.785,
+  "h": 57.0388,
+  "tex": "f(x)=\\sum_{n\\in S}e^{2\\pi i nx}",
+  "size": 26
+ },
+ {
+  "id": "p2_ask",
+  "w": 343.10925000000003,
+  "h": 34.816500000000005,
+  "tex": "(1)\\ \\int_0^1|f|^2dx\\qquad(2)\\ \\int_0^1|f|^4dx\\qquad(3)\\ \\int_0^1|f|dx\\geq\\frac{1}{2\\sqrt N}",
+  "size": 13.5
+ },
+ {
+  "id": "p3_equiv",
+  "w": 340.98329999999993,
+  "h": 21,
+  "tex": "\\Phi(a,b)=\\Phi(c,d)\\iff\\{a,b\\}=\\{c,d\\}",
+  "size": 21
+ },
+ {
+  "id": "p3_fiber",
+  "w": 307.704,
+  "h": 54.4,
+  "tex": "\\Phi^{-1}(s)=\\begin{cases}\\varnothing,&s\\notin S+S\\\\ \\{(a,a)\\},&s=2a\\\\ \\{(a,b),(b,a)\\},&s=a+b,\\ a\\neq b\\end{cases}",
+  "size": 16
+ },
+ {
+  "id": "p4_l2",
+  "w": 202.5704,
+  "h": 43.75129999999999,
+  "tex": "|f(x)|^2=\\sum_{m,n\\in S}e^{2\\pi i(m-n)x}",
+  "size": 19
+ },
+ {
+  "id": "p4_l4",
+  "w": 254.8544,
+  "h": 36.843199999999996,
+  "tex": "|f(x)|^4=\\sum_{n_1,n_2,n_3,n_4\\in S}e^{2\\pi i(n_1+n_2-n_3-n_4)x}",
+  "size": 16
+ },
+ {
+  "id": "p4_R",
+  "w": 411.15600000000006,
+  "h": 37.0635,
+  "tex": "\\int_0^1|f|^4dx=\\#\\{(n_1,n_2,n_3,n_4)\\in S^4:\\ n_1+n_2=n_3+n_4\\}=:R",
+  "size": 15
+ },
+ {
+  "id": "p5_deriv",
+  "w": 435.52885,
+  "h": 114.89795000000001,
+  "tex": "\\begin{aligned}\\int_0^1|f(x)|^2dx&=\\int_0^1\\left(\\sum_{m\\in S}e^{2\\pi i m x}\\right)\\left(\\sum_{n\\in S}e^{-2\\pi i n x}\\right)dx\\\\&=\\sum_{m,n\\in S}\\int_0^1e^{2\\pi i(m-n)x}dx=\\sum_{m,n\\in S}\\delta_{mn}=N\\end{aligned}",
+  "size": 18.5
+ },
+ {
+  "id": "p5_orth",
+  "w": 168.70800000000003,
+  "h": 37.627500000000005,
+  "tex": "\\int_0^1e^{2\\pi i kx}dx=\\begin{cases}1,&k=0\\\\ 0,&k\\neq0\\end{cases}",
+  "size": 15
+ },
+ {
+  "id": "p5_res",
+  "w": 148.6313,
+  "h": 46.9471,
+  "tex": "\\int_0^1|f(x)|^2dx=N",
+  "size": 19
+ },
+ {
+  "id": "p6_def",
+  "w": 465.527,
+  "h": 86.6884,
+  "tex": "\\begin{aligned}\\int_0^1|f|^4dx&=\\sum_{n_1,n_2,n_3,n_4\\in S}\\int_0^1e^{2\\pi i(n_1+n_2-n_3-n_4)x}dx=\\sum_{n_1,\\dots,n_4\\in S}\\delta_{n_1+n_2,\\,n_3+n_4}\\\\&=\\sum_{(n_1,n_2)\\in S^2}\\#\\{(n_3,n_4)\\in S^2:\\ n_3+n_4=n_1+n_2\\}\\end{aligned}",
+  "size": 15.5
+ },
+ {
+  "id": "p6_final",
+  "w": 308.606,
+  "h": 53.583999999999996,
+  "tex": "R=\\underbrace{N}_{n_1=n_2}+\\underbrace{2N(N-1)}_{n_1\\neq n_2}=2N^2-N",
+  "size": 20
+ },
+ {
+  "id": "p7_theta",
+  "w": 259.3418,
+  "h": 34.849999999999994,
+  "tex": "\\frac{1}{2}=\\theta\\cdot1+(1-\\theta)\\cdot\\frac{1}{4}\\ \\Longrightarrow\\ \\theta=\\frac{1}{3}",
+  "size": 17
+ },
+ {
+  "id": "p7_lemma",
+  "w": 433.6275,
+  "h": 77.0576,
+  "tex": "\\|f\\|_2\\leq\\|f\\|_1^{1/3}\\|f\\|_4^{2/3}\\quad\\iff\\quad\\int_0^1|f|dx\\geq\\frac{\\left(\\int_0^1|f|^2dx\\right)^{3/2}}{\\left(\\int_0^1|f|^4dx\\right)^{1/2}}",
+  "size": 17
+ },
+ {
+  "id": "p8_holder",
+  "w": 339.87239999999997,
+  "h": 99.6624,
+  "tex": "\\begin{aligned}\\int_0^1|f|^2dx&=\\int_0^1|f|^{2/3}\\cdot|f|^{4/3}dx\\\\&\\leq\\left(\\int_0^1|f|dx\\right)^{2/3}\\left(\\int_0^1|f|^4dx\\right)^{1/3}\\end{aligned}",
+  "size": 18
+ },
+ {
+  "id": "p8_chain1",
+  "w": 487.92975,
+  "h": 37.585350000000005,
+  "tex": "N\\leq I^{2/3}(2N^2-N)^{1/3}\\ \\Longrightarrow\\ N^3\\leq I^2(2N^2-N)\\ \\Longrightarrow\\ I^2\\geq\\frac{N^2}{2N-1}",
+  "size": 16.5
+ },
+ {
+  "id": "p8_chain2",
+  "w": 359.03400000000005,
+  "h": 54.636,
+  "tex": "I\\geq\\frac{N}{\\sqrt{2N-1}}\\geq\\frac{N}{\\sqrt{2N}}=\\sqrt{\\frac{N}{2}}\\geq\\frac{1}{2\\sqrt N}",
+  "size": 20
+ },
+ {
+  "id": "p8_res",
+  "w": 148.7548,
+  "h": 49.001000000000005,
+  "tex": "\\int_0^1|f|dx\\geq\\frac{1}{2\\sqrt N}",
+  "size": 19
+ },
+ {
+  "id": "p8_strong",
+  "w": 198.498,
+  "h": 40.977000000000004,
+  "tex": "\\int_0^1|f|dx\\geq\\frac{N}{\\sqrt{2N-1}}\\geq\\sqrt{\\frac{N}{2}}",
+  "size": 15
+ },
+ {
+  "id": "p9_sum",
+  "w": 394.92879999999997,
+  "h": 36.106,
+  "tex": "\\int_0^1|f|^2dx=N\\qquad\\int_0^1|f|^4dx=2N^2-N\\qquad\\int_0^1|f|dx\\geq\\frac{1}{2\\sqrt N}",
+  "size": 14
+ },
+ {
+  "id": "p10_l2",
+  "w": 135.92669999999998,
+  "h": 51.8889,
+  "tex": "\\int_0^1|f|^2dx=N",
+  "size": 21
+ },
+ {
+  "id": "p10_l4",
+  "w": 201.054,
+  "h": 51.8889,
+  "tex": "\\int_0^1|f|^4dx=2N^2-N",
+  "size": 21
+ },
+ {
+  "id": "p10_l1",
+  "w": 164.41320000000002,
+  "h": 54.159000000000006,
+  "tex": "\\int_0^1|f|dx\\geq\\frac{1}{2\\sqrt N}",
+  "size": 21
+ }
+]
