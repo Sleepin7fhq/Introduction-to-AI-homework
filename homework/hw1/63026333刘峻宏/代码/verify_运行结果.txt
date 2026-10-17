@@ -1,0 +1,27 @@
+﻿Backtracking verification: 4-term AP index partitions
+
+Part (a): enumeration for m = 1..5
+The family-A lower bound is (m+1)(m+2)/2.
+The two-family bound is m^2+m+1 (used in solution.md).
+
+m=1 n= 6 valid=  3 total= 15 ratio=0.200000 familyA_bound= 3 familyA_ok=YES two_family_bound= 3 two_family_ok=YES
+m=2 n=10 valid=  7 total= 45 ratio=0.155556 familyA_bound= 6 familyA_ok=YES two_family_bound= 7 two_family_ok=YES
+m=3 n=14 valid= 13 total= 91 ratio=0.142857 familyA_bound=10 familyA_ok=YES two_family_bound=13 two_family_ok=YES
+m=4 n=18 valid= 21 total=153 ratio=0.137255 familyA_bound=15 familyA_ok=YES two_family_bound=21 two_family_ok=YES
+m=5 n=22 valid= 31 total=231 ratio=0.134199 familyA_bound=21 familyA_ok=YES two_family_bound=31 two_family_ok=YES
+
+Part (b): all valid pairs for m = 1
+valid_pairs = [(1, 2), (1, 6), (5, 6)]
+expected_from_part_1 = [(1, 2), (1, 6), (5, 6)]
+match = True
+
+Part (c): m = 3 and (i, j) = (2, 13)
+partitionable = True
+  group 1: (1, 4, 7, 10)
+  group 2: (3, 6, 9, 12)
+  group 3: (5, 8, 11, 14)
+independent_check = True
+matches_part_2_construction = True
+
+ALL CHECKS PASSED
+EXIT=0

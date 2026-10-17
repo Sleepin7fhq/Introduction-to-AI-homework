@@ -1,0 +1,10 @@
+﻿saved fig_lemma.png
+saved fig_q1.png
+saved fig_q2.png
+saved fig_mod3.png
+saved fig_mod4.png
+saved fig_fail.png
+saved fig_band.png
+saved fig_data.png
+ALL FIGURES DONE
+EXIT=0
