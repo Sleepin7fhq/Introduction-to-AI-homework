@@ -1,0 +1,202 @@
+原题及来源
+题目：设函数 f(x) 在闭区间 [0,1] 上连续，在开区间 (0,1) 内可导，且 f(0) 等于 0，f(1) 等于 1。证明：存在三个互不相同的点 a、b、c，它们都在开区间 (0,1) 内，使得 f 在 a 点的导数、f 在 b 点的导数、f 在 c 点的导数三者之和等于 3。
+来源：本题改编自全国大学生数学竞赛（非数学类）决赛中值定理类经典题型，核心考点是拉格朗日中值定理与区间分割构造，是高等数学"多中值点"问题的典型代表。
+
+dsh 提示词
+请证明下面这道高等数学题，要求写出完整推理，每一步注明依据。题目：函数 f(x) 在闭区间 [0,1] 上连续，在开区间 (0,1) 内可导，且 f(0) 等于 0，f(1) 等于 1。证明：存在三个互不相同的点 a、b、c，都在开区间 (0,1) 内，使得 f 在 a 点的导数、f 在 b 点的导数、f 在 c 点的导数三者之和等于 3。
+要求： 
+1.先说明整体证明思路，即如何把区间分成三段。
+2.详细写出构造过程，说明怎样保证 a、b、c 三个点互不相同。
+3. 明确写出每一步用到的定理名称。
+4. 输出格式为 Markdown，公式用普通文字描述，不用特殊符号。
+
+代码
+// mvt_trisection.cpp
+// 三等分区间 + 拉格朗日中值定理：数值验证
+//
+// 定理（题设）：f 在 [0,1] 连续、(0,1) 可导，f(0)=0，f(1)=1，
+// 则存在互不相同的 a, b, c ∈ (0,1)，使 f'(a)+f'(b)+f'(c)=3。
+//
+// 思路：取分点 0, 1/3, 2/3, 1，在三段上各用一次拉格朗日中值定理，
+//       中值点分别落在 (0,1/3)、(1/3,2/3)、(2/3,1) 中，故互不相同；
+//       三式相加，中间项裂项相消。
+//
+// 说明：本程序是"验证"而非"证明"。证明在数学上已由中值定理完成；
+//       程序只对具体函数用二分法复现 a, b, c，检查三条中值等式与和为 3。
+//
+// 编译：g++ -std=c++17 -O2 -o mvt_trisection mvt_trisection.cpp
+// 运行：./mvt_trisection      （Windows 控制台如乱码请先 chcp 65001）
+
+#include <cmath>
+#include <cstdio>
+#include <functional>
+#include <initializer_list>
+#include <utility>
+#include <vector>
+
+namespace {
+
+constexpr double kPi = 3.14159265358979323846;
+
+// ---------------------------------------------------------------
+// 1. 一段上的中值方程：求 xi ∈ (lo, hi)，使 f'(xi) = 段平均斜率
+//    g(x) = f'(x) - slope，找变号区间后二分。
+//    向两端各退一小步 eps，避免端点导数无定义（如 sqrt 在 0）。
+// ---------------------------------------------------------------
+double solve_mvt(const std::function<double(double)>& df,
+                 double slope, double lo, double hi,
+                 int iters = 200, double eps = 1e-14) {
+    auto g = [&](double x) { return df(x) - slope; };
+
+    const double a = lo + eps;
+    const double b = hi - eps;
+    const double ga = g(a);
+    const double gb = g(b);
+
+    double left = 0.0, right = 0.0;
+    if (ga * gb <= 0.0) {
+        left = a;
+        right = b;
+    } else {
+        // 端点不同号时扫描，找第一个变号子区间
+        const int n = 1000;
+        const double step = (b - a) / n;
+        bool found = false;
+        double prev_x = a, prev_g = ga;
+        for (int i = 1; i <= n; ++i) {
+            const double x = a + i * step;
+            const double gx = g(x);
+            if (prev_g * gx <= 0.0) {
+                left = prev_x;
+                right = x;
+                found = true;
+                break;
+            }
+            prev_x = x;
+            prev_g = gx;
+        }
+        if (!found) return NAN;  // 该段找不到变号（理论上不应发生）
+    }
+
+    double gl = g(left);
+    for (int k = 0; k < iters; ++k) {
+        const double mid = 0.5 * (left + right);
+        const double gm = g(mid);
+        if (mid == left || mid == right) break;  // 已达浮点精度极限
+        if (gl * gm <= 0.0) {
+            right = mid;
+        } else {
+            left = mid;
+            gl = gm;
+        }
+    }
+    return 0.5 * (left + right);
+}
+
+// ---------------------------------------------------------------
+// 2. 主验证：对每个测试函数，三段各求中值点并检查结论
+// ---------------------------------------------------------------
+bool verify(const char* name,
+            const std::function<double(double)>& f,
+            const std::function<double(double)>& df) {
+    std::printf("=================================================================\n");
+    std::printf("函数: %s\n", name);
+
+    if (std::fabs(f(0.0)) > 1e-12 || std::fabs(f(1.0) - 1.0) > 1e-12) {
+        std::printf("  题设 f(0)=0, f(1)=1 不成立，跳过\n");
+        return false;
+    }
+
+    const double cuts[4] = {0.0, 1.0 / 3.0, 2.0 / 3.0, 1.0};
+    double xi[3] = {0, 0, 0};
+    double der[3] = {0, 0, 0};
+    bool ok_all = true;
+
+    for (int i = 0; i < 3; ++i) {
+        const double p = cuts[i], q = cuts[i + 1];
+        const double slope = (f(q) - f(p)) / (q - p);
+        const double x = solve_mvt(df, slope, p, q);
+
+        if (std::isnan(x)) {
+            std::printf("  第%d段 [%.4f, %.4f] 未找到中值点\n", i + 1, p, q);
+            ok_all = false;
+            continue;
+        }
+
+        const bool inside = (p < x && x < q);  // 落在开区间 => 三点互不相同
+        const double lhs = df(x);
+        const double err = std::fabs(lhs - slope);
+        const bool ok = inside && err < 1e-6;
+        ok_all = ok_all && ok;
+
+        xi[i] = x;
+        der[i] = lhs;
+
+        std::printf("  第%d段 [%.4f, %.4f]  平均斜率=%.10f  中值点=%.10f  "
+                    "f'(中值点)=%.10f  落在开区间=%s  误差=%.2e  %s\n",
+                    i + 1, p, q, slope, x, lhs,
+                    inside ? "true" : "false", err, ok ? "OK" : "FAIL");
+    }
+
+    const bool distinct = (xi[0] != xi[1] && xi[1] != xi[2] && xi[0] != xi[2]);
+    const double sum = der[0] + der[1] + der[2];
+    const double gap = std::fabs(sum - 3.0);
+    ok_all = ok_all && distinct && gap < 1e-6;
+
+    std::printf("  a=%.10f  b=%.10f  c=%.10f\n", xi[0], xi[1], xi[2]);
+    std::printf("  a<b 且 b<c 且互不相同 = %s\n", distinct ? "true" : "false");
+    std::printf("  f'(a)+f'(b)+f'(c) = %.12f   与 3 的差距 = %.2e  %s\n",
+                sum, gap, (gap < 1e-6 && distinct) ? "OK" : "FAIL");
+    std::printf("  结论: %s\n", ok_all ? "通过" : "未通过");
+    return ok_all;
+}
+
+}  // namespace
+
+int main() {
+    struct Case {
+        const char* name;
+        std::function<double(double)> f;
+        std::function<double(double)> df;
+    };
+
+    // 若干满足题设的测试函数（f(0)=0, f(1)=1）
+    const std::vector<Case> cases = {
+        {"f(x)=x",
+         [](double x) { return x; },
+         [](double) { return 1.0; }},
+
+        {"f(x)=x^2",
+         [](double x) { return x * x; },
+         [](double x) { return 2.0 * x; }},
+
+        {"f(x)=x^3",
+         [](double x) { return x * x * x; },
+         [](double x) { return 3.0 * x * x; }},
+
+        {"f(x)=sqrt(x)",
+         [](double x) { return std::sqrt(x); },
+         [](double x) { return 0.5 / std::sqrt(x); }},
+
+        {"f(x)=1-cos(pi*x/2)",
+         [](double x) { return 1.0 - std::cos(kPi * x / 2.0); },
+         [](double x) { return (kPi / 2.0) * std::sin(kPi * x / 2.0); }},
+
+        {"f(x)=x+sin(2pi x)/(2pi)",
+         [](double x) { return x + std::sin(2.0 * kPi * x) / (2.0 * kPi); },
+         [](double x) { return 1.0 + std::cos(2.0 * kPi * x); }},
+
+        {"f(x)=x*exp(x-1)",
+         [](double x) { return x * std::exp(x - 1.0); },
+         [](double x) { return (x + 1.0) * std::exp(x - 1.0); }},
+    };
+
+    bool all_ok = true;
+    for (const auto& c : cases) {
+        all_ok = verify(c.name, c.f, c.df) && all_ok;
+    }
+
+    std::printf("=================================================================\n");
+    std::printf("全部测试: %s\n", all_ok ? "通过" : "存在失败");
+    return all_ok ? 0 : 1;
+}
