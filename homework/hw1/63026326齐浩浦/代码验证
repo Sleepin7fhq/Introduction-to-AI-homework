@@ -1,0 +1,153 @@
+#!/usr/bin/env node
+/**
+ * 2026 新课标Ⅰ卷 第 19 题 —— 数值复核
+ * 运行： node verify.js
+ * 说明：这里做的是“实例检验”，用来查出算术/端点错误，不能替代全称证明。
+ */
+
+const f1 = x => (x < 0 ? Math.pow(2, x) : 1 - x);           // 第(1)问的分段函数
+const f2 = x => (x < 0 ? Math.pow(2, x) : (x === 0 ? 0 : -Math.pow(2, -x))); // 奇函数模型
+
+let seed = 20261019 >>> 0;
+const rand = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+
+const pad = (s, n) => String(s).padEnd(n, " ");
+const line = (a, b, c) => console.log(pad(a, 26) + pad(b, 40) + c);
+
+console.log("\n=== V1  第(1)问：D(-1) 是否等于 (0, 3/2) ===");
+{
+  let lo = Infinity, hi = -Infinity, n = 0;
+  for (let d = -0.25; d <= 1.750001; d += 0.00005) {
+    if (f1(d - 1) > 0.5) { n++; if (d < lo) lo = d; if (d > hi) hi = d; }
+  }
+  line("扫描步长", "5e-5，范围 [-0.25, 1.75]", "");
+  line("命中样本数", n, "");
+  line("数值区间", `[${lo.toFixed(5)}, ${hi.toFixed(5)}]`, "");
+  line("端点 d=0", `f(-1) = ${f1(-1)}  → 不满足严格大于，排除`, "");
+  line("端点 d=1.5", `f(0.5) = ${f1(0.5)} → 不满足严格大于，排除`, "");
+  line("内部点 d=0.35 / 1.45", `${f1(-0.65) > 0.5} / ${f1(0.45) > 0.5}`, "");
+  line("外部点 d=-0.1 / 1.6", `${f1(-1.1).toFixed(4)} / ${f1(0.6).toFixed(4)}`, "");
+  const ok = Math.abs(lo - 0) < 1e-4 && Math.abs(hi - 1.5) < 1e-4;
+  console.log(ok ? "  → 与 (0, 3/2) 一致 ✔" : "  → 不一致 ✘");
+}
+
+console.log("\n=== V2  第(2)问：奇函数情形 D(x1) ⊇ D(x2) ===");
+{
+  let pairs = 0, checks = 0, viol = 0, witness = null;
+  for (let k = 0; k < 2500; k++) {
+    const x1 = rand() * 12 - 6, x2 = rand() * 12 - 6;
+    if (Math.abs(x1) < 1e-3 || Math.abs(x2) < 1e-3) continue;
+    if (f2(x1) > f2(x2)) continue;                 // 只取满足前提 f(x1) <= f(x2) 的样本
+    pairs++;
+    for (let d = -8; d <= 8; d += 0.025) {
+      const a = x2 + d, b = x1 + d;
+      if (Math.abs(a) < 5e-3 || Math.abs(b) < 5e-3) continue; // 避开 0 处断点
+      checks++;
+      const g2 = f2(a) - f2(x2), g1 = f2(b) - f2(x1);
+      if (g2 > 1e-9 && g1 <= 1e-12) { viol++; if (!witness) witness = { x1, x2, d }; }
+    }
+  }
+  line("样本对数", pairs, "");
+  line("d 的检查次数", checks, "");
+  line("反例数", viol, viol === 0 ? "✔" : "✘ " + JSON.stringify(witness));
+}
+
+console.log("\n=== V3  第(3)(i)：矛盾链的算术可实现性 ===");
+{
+  const rows = [-3, -0.5, 0, 0.4, 0.7, 0.99];
+  console.log(pad("f(0)", 8) + pad("c", 10) + pad("t=log2 c", 12) + pad("d=-t/2", 12) + "2^(t+d)-2^t");
+  for (const f0 of rows) {
+    const c = (1 + Math.max(f0, 0.5)) / 2;
+    const t = Math.log2(c), d = -t / 2;
+    const rise = Math.pow(2, t + d) - Math.pow(2, t);
+    const ok = c > f0 && t > -1 && t < 0 && d > 0 && d < -t && d < 1 && rise > 0;
+    console.log(pad(f0, 8) + pad(c.toFixed(4), 10) + pad(t.toFixed(4), 12) + pad(d.toFixed(4), 12) + rise.toExponential(3) + (ok ? "  ✔" : "  ✘"));
+  }
+}
+
+console.log("\n=== V4  奇函数模型在 (0,+∞) 上是否递增 ===");
+{
+  let bad = 0;
+  for (let x = 0.01; x < 6; x += 0.01) if (!(f2(x + 0.01) > f2(x))) bad++;
+  line("网格点", 600, "");
+  line("下降次数", bad, bad === 0 ? "✔" : "✘");
+}
+
+console.log("\n=== V5  随机搜索“非单调却满足 (a)”的函数 ===");
+{
+  const mkF = vs => x => {
+    if (x < 0) return Math.pow(2, x);
+    if (x >= 4) return vs[4];
+    const i = Math.floor(x);
+    return vs[i] + (vs[i + 1] - vs[i]) * (x - i);
+  };
+  const firstViolation = (f, budget) => {
+    let bad = null;
+    for (let k = 0; k < budget; k++) {
+      const x1 = rand() * 5 - 0.9, x2 = rand() * 5 - 0.9;
+      if (Math.abs(x1) < 1e-3 || Math.abs(x2) < 1e-3) continue;
+      if (f(x1) > f(x2)) continue;
+      for (let d = -4; d <= 4; d += 0.027) {
+        const a = x2 + d, b = x1 + d;
+        if (Math.abs(a) < 5e-3 || Math.abs(b) < 5e-3) continue;
+        if (f(a) - f(x2) > 1e-9 && f(b) - f(x1) <= 1e-12) { bad = { x1, x2, d }; break; }
+      }
+      if (bad) break;
+    }
+    return bad;
+  };
+  let pass = 0, passB = 0;
+  for (let c = 0; c < 60; c++) {
+    const f0 = 1 + rand() * 2;
+    const vs = [f0];
+    for (let i = 0; i < 4; i++) vs.push(rand() * 6 - 3);
+    const f = mkF(vs);
+    let okB = true;
+    for (let x = 0.05; x < 1; x += 0.05) if (!(f(x) < f(0))) { okB = false; break; }
+    if (!firstViolation(f, 120)) { pass++; if (okB) passB++; }
+  }
+  line("随机候选数", 60, "");
+  line("抽样未发现违例", pass, "");
+  line("同时满足 (b)", passB, "");
+  console.log("  （样例数很小，0 通过只说明 (a) 很苛刻，不构成证明）");
+}
+
+console.log("\n=== V6  刻意“先升后降”的形状，找违反 (a) 的见证 ===");
+{
+  const nodes = { 0: 1, 1: 2, 1.2: 3, 1.6: -1, 2.5: 0.5, 4: 2 };
+  const xs = Object.keys(nodes).map(Number).sort((a, b) => a - b);
+  const f = x => {
+    if (x < 0) return Math.pow(2, x);
+    if (x <= xs[0]) return nodes[xs[0]];
+    for (let i = 0; i < xs.length - 1; i++) {
+      if (x <= xs[i + 1]) {
+        const t = (x - xs[i]) / (xs[i + 1] - xs[i]);
+        return nodes[xs[i]] + t * (nodes[xs[i + 1]] - nodes[xs[i]]);
+      }
+    }
+    return nodes[xs[xs.length - 1]];
+  };
+  let bad = null;
+  outer:
+  for (let k = 0; k < 400; k++) {
+    const x1 = rand() * 5 - 0.9, x2 = rand() * 5 - 0.9;
+    if (Math.abs(x1) < 1e-3 || Math.abs(x2) < 1e-3) continue;
+    if (f(x1) > f(x2)) continue;
+    for (let d = -4; d <= 4; d += 0.027) {
+      const a = x2 + d, b = x1 + d;
+      if (Math.abs(a) < 5e-3 || Math.abs(b) < 5e-3) continue;
+      if (f(a) - f(x2) > 1e-9 && f(b) - f(x1) <= 1e-12) { bad = { x1, x2, d }; break outer; }
+    }
+  }
+  if (bad) {
+    const { x1, x2, d } = bad;
+    line("见证 x1 / x2 / d", `${x1.toFixed(3)} / ${x2.toFixed(3)} / ${d.toFixed(3)}`, "");
+    line("f(x1) <= f(x2)", `${f(x1).toFixed(3)}  <=  ${f(x2).toFixed(3)}`, "✔ 前提成立");
+    line("d ∈ D(x2)", `f(x2+d)=${f(x2 + d).toFixed(3)} > ${f(x2).toFixed(3)}`, "✔");
+    line("d ∉ D(x1)", `f(x1+d)=${f(x1 + d).toFixed(3)} <= ${f(x1).toFixed(3)}`, "✘ 违反 (a)");
+  } else {
+    console.log("  未找到见证（增大预算再试）");
+  }
+}
+
+console.log("\n完成。数值只作佐证；全称结论仍以证明为准。\n");
