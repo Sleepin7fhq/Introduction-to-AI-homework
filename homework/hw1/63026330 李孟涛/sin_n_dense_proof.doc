@@ -1,0 +1,48 @@
+<html><head><meta charset='utf-8'>
+<title>关于序列 {sin n} 聚点集的证明</title>
+<style>
+body{font-family:'宋体',SimSun,serif;font-size:12pt;line-height:1.65;margin:2.2cm;}
+h1{font-size:18pt;text-align:center;margin-bottom:18pt;}
+h2{font-size:14pt;margin-top:16pt;margin-bottom:8pt;}
+p{margin:0 0 7pt 0;text-indent:2em;text-align:justify;}
+.formula{text-indent:0;text-align:center;font-family:'Cambria Math','Times New Roman',serif;}
+.noindent{text-indent:0;}
+.lemma{font-weight:bold;}
+</style></head><body>
+<h1>关于序列 {sin n} 聚点集的证明</h1>
+<h2>结论</h2>
+<p>命题成立，而且有更强的结论：{sin n} 的聚点集恰为 [-1,1]；事实上它还在 [-1,1] 中<b>等分布</b>（按反正弦测度）。</p >
+<p>证明的核心只有一个事实：<b>1/(2&pi;) 是无理数</b>，因为 &pi; 无理。</p >
+<h2>引理 1（倍点稠密）</h2>
+<p>设 &theta; &notin; <i>Q</i>，则 {{n&theta;}: n &ge; 1} 在 [0,1) 中稠密。</p >
+<p><span class='lemma'>证明。</span>任给 N &ge; 1，考虑 0, &theta;, 2&theta;, ..., N&theta; 这 N+1 个小数部分，并把 [0,1) 分成 N 个长为 1/N 的区间。由抽屉原理，存在 0 &le; i &lt; j &le; N 使 |{j&theta;} - {i&theta;}| &lt; 1/N。令 q = j - i &isin; [1,N]，则</p >
+<p class='formula'>&delta; := ||q&theta;|| &lt; 1/N,&nbsp;&nbsp;&delta; &gt; 0.</p >
+<p>若 q&theta; = p + &delta;，则 {jq&theta;} = {j&delta;}，j = 0,1,...,&lfloor;1/&delta;&rfloor; 这些点把圆周分成若干段，每段长度 &le; &delta;；若 q&theta; = p - &delta;，则 {jq&theta;} = {-j&delta;} 是前一点集的反射，同样 &delta;-稠密。所以 [0,1) 中任何长度 &gt; &delta; 的区间必含某个 {jq&theta;}。</p >
+<p>现给开区间 I &sub; [0,1)，长 &ell; &gt; 0，取 N &gt; 1/&ell;，则 &delta; &lt; 1/N &lt; &ell;，故 I 含某点 {n&theta;}。&#9632;</p >
+<h2>引理 2</h2>
+<p>{n mod 2&pi;: n &ge; 1} 在 [0,2&pi;) 中稠密；且对每个 N，尾巴 {n mod 2&pi;: n &ge; N} 也稠密。</p >
+<p><span class='lemma'>证明。</span>&pi; 无理 &rArr; 1/(2&pi;) 无理。由引理 1，{{n/(2&pi;)}} 稠密。又</p >
+<p class='formula'>n = 2&pi;&lfloor;n/(2&pi;)&rfloor; + (n mod 2&pi;) &rArr; {n/(2&pi;)} = (n mod 2&pi;)/(2&pi;),</p >
+<p>故 {n mod 2&pi;} = 2&pi;{{n/(2&pi;)}} 稠密。尾巴的稠密性：{(N+k) mod 2&pi;}<sub>k</sub> 是稠密集的平移，平移仍是稠密的。&#9632;</p >
+<h2>主证明</h2>
+<p>任取 &alpha; &isin; [-1,1]。取 t<sub>0</sub> &isin; (0,2&pi;) 使 sin t<sub>0</sub> = &alpha;：</p >
+<p class='noindent'>&nbsp;&nbsp;&nbsp;&nbsp;&alpha; &gt; 0 时 t<sub>0</sub> = arcsin &alpha; &isin; (0,&pi;/2]；<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&alpha; = 0 时 t<sub>0</sub> = &pi;；<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&alpha; &lt; 0 时 t<sub>0</sub> = arcsin &alpha; + 2&pi; &isin; (3&pi;/2,2&pi;)。</p >
+<p>按归纳法构造 n<sub>k</sub>：已取 n<sub>k-1</sub> 时，由引理 2 的尾巴稠密性，可取到</p >
+<p class='formula'>n<sub>k</sub> &gt; n<sub>k-1</sub>,&nbsp;&nbsp; |(n<sub>k</sub> mod 2&pi;) - t<sub>0</sub>| &lt; 1/k.</p >
+<p>于是 n<sub>k</sub> = (n<sub>k</sub> mod 2&pi;) + 2&pi; m<sub>k</sub>（m<sub>k</sub> &isin; Z），由 sin 的 2&pi; 周期性及 |sin x - sin y| &le; |x - y|：</p >
+<p class='formula'>|sin n<sub>k</sub> - &alpha;| = |sin(n<sub>k</sub> mod 2&pi;) - sin t<sub>0</sub>| &le; |(n<sub>k</sub> mod 2&pi;) - t<sub>0</sub>| &lt; 1/k &rarr; 0.</p >
+<p>故 lim<sub>k&rarr;&infin;</sub> sin n<sub>k</sub> = &alpha;。&#9632;</p >
+<h2>附注与加强</h2>
+<p><b>1. 上界不能再扩大：</b>sin n &isin; [-1,1]，所以聚点集不能超出 [-1,1]；上面已证明它能取遍 [-1,1]。因此 liminf sin n = -1、limsup sin n = 1，序列 {sin n} 发散但有界。</p >
+<p><b>2. 每个 &alpha; 对应无穷多个 n：</b>不只是子列存在，而且这些 n 可取自任意远处，这由尾巴稠密性保证。</p >
+<p><b>3. 等分布（Weyl 判别法）：</b>对非零整数 h，</p >
+<p class='formula'>(1/N)&sum;<sub>n&le;N</sub> e<sup>2&pi;i h n/(2&pi;)</sup> = (1/N)&sum;<sub>n&le;N</sub> e<sup>i h n</sup> &rarr; 0，</p >
+<p>因 e<sup>i h</sup> &ne; 1。故 {n/(2&pi;)} 在 [0,1) 等分布，从而对 -1 &le; a &lt; b &le; 1，</p >
+<p class='formula'>#{n &le; N: sin n &isin; [a,b]} / N &rarr; (arcsin b - arcsin a)/&pi;.</p >
+<p>所以稠密不仅成立，还是“按正确密度”稠密。</p >
+<p><b>4. 关键条件只是 &pi; 无理：</b>对任意非零有理数 q，q/(2&pi;) 无理，因此 {sin(qn)} 同样在 [-1,1] 中稠密。</p >
+<p><b>5. 具体例：</b>&pi; 的渐近分数给出显式子列。如 355/113 &asymp; &pi;，113&pi; = 354.9999698...，故 sin(355) = sin(355 - 113&pi;) &asymp; 3.0 &times; 10<sup>-5</sup>，这正对应 &alpha; = 0 的逼近趋势。</p >
+<p>一句话总结：{n mod 2&pi;} 的稠密性（源自 &pi; 的无理性）加上 sin 的周期性与连续性，就把 [-1,1] 全部“扫”成了聚点。</p >
+</body></html>
