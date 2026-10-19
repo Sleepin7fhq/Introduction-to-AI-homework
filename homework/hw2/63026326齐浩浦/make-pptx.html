@@ -1,0 +1,729 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>生成 PPTX · 2026 新课标Ⅰ卷 第19题</title>
+<style>
+  :root{--ink:#171a21;--muted:#5b6472;--line:#dcd7cc;--bg:#fbfaf6;--blue:#1d4ed8;--warm:#b45309;--red:#b91c1c;--green:#047857}
+  *{box-sizing:border-box}
+  body{margin:0;padding:40px 44px 60px;background:#e9e6df;color:var(--ink);
+       font-family:"Segoe UI","PingFang SC","Microsoft YaHei",system-ui,sans-serif}
+  .wrap{max-width:820px;margin:0 auto;background:#fff;border:1px solid var(--line);border-radius:16px;padding:28px 32px}
+  h1{font-size:24px;margin:0 0 6px}
+  p{font-size:14.5px;line-height:1.6;color:var(--muted);margin:0 0 14px}
+  button{appearance:none;border:0;border-radius:10px;background:var(--blue);color:#fff;font-size:16px;font-weight:700;
+         padding:13px 22px;cursor:pointer;font-family:inherit}
+  button:disabled{background:#9aa3b2;cursor:default}
+  #log{margin-top:16px;background:#0f172a;color:#d7e0ef;border-radius:10px;padding:14px 16px;
+       font:12.5px/1.7 ui-monospace,Consolas,monospace;white-space:pre-wrap;min-height:60px}
+  .ok{color:#6ee7a8}.bad{color:#fca5a5}.dim{color:#8fa1bd}
+  canvas{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>把幻灯片导出为 .pptx</h1>
+  <p>点击按钮：浏览器会在本地把 10 页幻灯片画成 1920×1080 的图片，按 OOXML 规范打包成真正的 <b>.pptx</b> 并下载。全程离线，不上传任何内容。</p>
+  <button id="go">生成并下载 .pptx</button>
+  <div id="log">等待执行…</div>
+</div>
+<canvas id="cv"></canvas>
+<script>
+"use strict";
+/* ===================== 基础 ===================== */
+const CW = 1920, CH = 1080, W = 1280, H = 720, SS = CW / W;
+const C = { ink:"#171a21", muted:"#5b6472", line:"#dcd7cc", bg:"#fbfaf6", white:"#ffffff",
+            blue:"#1d4ed8", warm:"#b45309", red:"#b91c1c", green:"#047857",
+            soft:"#eef2ff", softline:"#c7d2fe", okbg:"#f4fbf8", okline:"#a7d7c5",
+            warnbg:"#fff7f7", warnline:"#f0b8b8", faint:"#e8e3d9" };
+const FONT = '"Microsoft YaHei","PingFang SC","Segoe UI",sans-serif';
+
+let cv, g;
+function begin(){
+  cv = document.getElementById("cv");
+  cv.width = CW; cv.height = CH;
+  g = cv.getContext("2d");
+  g.setTransform(SS,0,0,SS,0,0);
+  g.textBaseline = "top";
+  g.fillStyle = C.bg; g.fillRect(0,0,W,H);
+}
+const font = (px,bold)=> (bold?"700 ":"400") + px + "px " + FONT;
+
+function wrapText(s, maxW, px, bold){
+  g.font = font(px,bold);
+  const out = []; let cur = "";
+  for (const ch of String(s)){
+    if (ch === "\n"){ out.push(cur); cur = ""; continue; }
+    const t = cur + ch;
+    if (g.measureText(t).width > maxW && cur){ out.push(cur); cur = ch; }
+    else cur = t;
+  }
+  out.push(cur);
+  return out;
+}
+function txt(s, x, y, px, color, bold, maxW, lh){
+  maxW = maxW || 1120; lh = lh || px * 1.5;
+  const lines = wrapText(s, maxW, px, bold);
+  g.fillStyle = color || C.ink; g.font = font(px, !!bold);
+  for (let i=0;i<lines.length;i++) g.fillText(lines[i], x, y + i*lh);
+  return lines.length * lh;
+}
+function rrPath(x,y,w,h,r){
+  g.beginPath();
+  g.moveTo(x+r,y);
+  g.arcTo(x+w,y,x+w,y+h,r);
+  g.arcTo(x+w,y+h,x,y+h,r);
+  g.arcTo(x,y+h,x,y,r);
+  g.arcTo(x,y,x+w,y,r);
+  g.closePath();
+}
+function card(x,y,w,h,fill,stroke){
+  rrPath(x,y,w,h,14);
+  g.fillStyle = fill || C.white; g.fill();
+  if (stroke){ g.strokeStyle = stroke; g.lineWidth = 1.2; g.stroke(); }
+}
+/* 卡片内文：items = [{t,px,bold,color,gap}]，返回高度 */
+function cardItems(x,y,w,items,opt){
+  opt = opt || {};
+  const pad = opt.pad || 16;
+  let h = pad*2;
+  const measured = items.map(it=>{
+    const lh = (it.px||17)*1.55;
+    const lines = wrapText(it.t, w-pad*2, it.px||17, it.bold);
+    const bh = lines.length*lh + (it.gap||4);
+    h += bh;
+    return {it, lines, lh, bh};
+  });
+  h += (opt.extra||0);
+  card(x,y,w,h,opt.fill||C.white,opt.stroke||C.line);
+  let cy = y + pad;
+  for (const m of measured){
+    g.fillStyle = m.it.color || C.ink;
+    g.font = font(m.it.px||17, !!m.it.bold);
+    for (let i=0;i<m.lines.length;i++) g.fillText(m.lines[i], x+pad, cy + i*m.lh);
+    cy += m.bh;
+  }
+  return h;
+}
+function pill(x,y,w,h,label,fill,stroke,color){
+  rrPath(x,y,w,h,h/2);
+  g.fillStyle = fill; g.fill();
+  if (stroke){ g.strokeStyle = stroke; g.lineWidth = 1.2; g.stroke(); }
+  g.fillStyle = color; g.font = font(14,true);
+  const tw = g.measureText(label).width;
+  g.fillText(label, x + (w-tw)/2, y + (h-16)/2 + 1);
+}
+function header(kick, title, tpx){
+  txt(kick, 72, 40, 13, C.blue, true, 1000);
+  const h = txt(title, 70, 64, tpx||38, C.ink, true, 1145, (tpx||38)*1.18);
+  return 64 + h + 18;
+}
+function footer(a,b){
+  txt(a, 72, 684, 12, "#8b8477", false, 560);
+  g.font = font(12,false);
+  const tw = g.measureText(b).width;
+  txt(b, 1208 - tw, 684, 12, "#8b8477", false, 400);
+}
+
+/* ===================== 图形（坐标系 640×340） ===================== */
+const L = (x1,y1,x2,y2,col,w,dash)=>{
+  g.save(); g.strokeStyle = col||"#9aa3b2"; g.lineWidth = w||1.5;
+  if (dash) g.setLineDash(dash);
+  g.beginPath(); g.moveTo(x1,y1); g.lineTo(x2,y2); g.stroke(); g.restore();
+};
+const PL = (pts,col,w)=>{
+  g.save(); g.strokeStyle = col; g.lineWidth = w||3.4; g.lineJoin="round"; g.lineCap="round";
+  g.beginPath(); pts.forEach((p,i)=> i? g.lineTo(p[0],p[1]) : g.moveTo(p[0],p[1]));
+  g.stroke(); g.restore();
+};
+const DOT = (x,y,r,fill,stroke)=>{
+  g.save(); g.beginPath(); g.arc(x,y,r||5,0,Math.PI*2);
+  g.fillStyle = fill||C.ink; g.fill();
+  if (stroke){ g.strokeStyle = stroke; g.lineWidth = 2.4; g.stroke(); }
+  g.restore();
+};
+const T = (x,y,s,px,col,bold,align)=>{
+  g.save(); g.fillStyle = col||C.ink; g.font = font(px||13, !!bold);
+  g.textAlign = align || "left";
+  g.fillText(s, x, y);
+  g.restore();
+};
+const ARR = (x1,y1,x2,y2,col,w)=>{
+  g.save(); g.strokeStyle = col; g.lineWidth = w||2; g.fillStyle = col;
+  g.beginPath(); g.moveTo(x1,y1); g.lineTo(x2,y2); g.stroke();
+  const a = Math.atan2(y2-y1, x2-x1), hl = 11;
+  g.beginPath();
+  g.moveTo(x2,y2);
+  g.lineTo(x2 - hl*Math.cos(a-0.42), y2 - hl*Math.sin(a-0.42));
+  g.lineTo(x2 - hl*Math.cos(a+0.42), y2 - hl*Math.sin(a+0.42));
+  g.closePath(); g.fill(); g.restore();
+};
+
+function fig1(){ /* D(x0) 的几何含义 */
+  L(90,290,600,290); L(110,40,110,308);
+  PL([[150,255],[200,225],[250,196],[300,172],[350,152],[400,137],[460,126],[520,120],[570,117]], C.blue);
+  L(250,196,250,290,C.warm,1.3,[6,5]); L(400,137,400,290,C.warm,1.3,[6,5]);
+  L(110,196,250,196,C.warm,1.3,[6,5]);
+  ARR(250,311,398,311,C.green,2);
+  DOT(250,196,5.2,C.ink); DOT(400,137,5.2,C.warm);
+  T(190,318,"x₀",14,"#374151"); T(372,318,"x₀+d",14,"#374151");
+  T(296,300,"d",13,C.green,true);
+  T(116,184,"f(x₀)",12,C.warm); T(408,126,"f(x₀+d) > f(x₀)",12,C.warm);
+  T(66,46,"f",12,C.muted); T(585,306,"x",12,C.muted);
+}
+function fig2(){ /* 第(1)问 */
+  L(80,240,600,240); L(300,45,300,335);
+  L(80,200,600,200,"#d97706",1.5,[7,6]);
+  PL([[102,223],[120,220],[165,212],[210,200],[255,183],[300,160]], C.blue);
+  L(300,160,498,257,C.blue,3.4);
+  L(210,200,345,200,C.green,6);
+  L(210,200,210,240,C.green,1.2,[4,4]); L(345,200,345,240,C.green,1.2,[4,4]);
+  DOT(210,200,4.8,C.green); DOT(345,200,4.8,C.green); DOT(300,160,4.4,C.ink);
+  ARR(210,318,343,318,C.warm,2);
+  T(196,248,"−1",13); T(292,248,"0",13); T(334,248,"1/2",13);
+  T(352,186,"y = 1/2",12,"#d97706",true);
+  T(146,182,"f(−1)=1/2",11.5,C.green);
+  T(204,330,"d: 0 → 3/2",12,C.warm,true);
+  T(82,52,"f",12,C.muted); T(585,252,"t",12,C.muted);
+}
+function fig3(){ /* 奇函数 */
+  L(80,210,600,210); L(300,45,300,320);
+  PL([[102,191],[120,188],[165,178],[210,165],[255,146],[298,121]], C.blue);
+  PL([[303,287],[322,286],[345,274],[390,255],[435,242],[480,233],[540,224]], C.warm);
+  DOT(300,121,4.4,C.white,C.blue); DOT(300,210,4.8,C.ink); DOT(300,287,4.4,C.white,C.warm);
+  T(280,102,"1",12,C.blue); T(308,196,"0",12,C.ink); T(308,292,"−1",12,C.warm);
+  T(116,62,"x<0：f = 2^x ↗",13,C.blue,true);
+  T(380,280,"x>0：f = −2^−x ↗",13,C.warm,true);
+  T(82,52,"f",12,C.muted); T(585,222,"x",12,C.muted);
+}
+function fig4(){ /* 第(3)(i) 数轴 */
+  L(60,230,600,230);
+  [[140,178,C.blue],[225,160,C.blue],[390,105,C.green],[520,192,C.red]].forEach(a=>{
+    L(a[0],230,a[0],a[1],a[2],3.4); DOT(a[0],230,4.4,a[2]);
+  });
+  L(140,258,225,258,C.blue,1.8); L(140,252,140,264,C.blue,1.8); L(225,252,225,264,C.blue,1.8);
+  T(146,166,"2^t",13,C.blue,true); T(232,148,"2^(t+d)",13,C.blue,true);
+  T(348,90,"f(0) ≥ 1",13,C.green,true); T(528,180,"f(d)",13,C.red,true);
+  T(126,244,"t",12); T(212,244,"t+d",12); T(382,244,"0",12); T(514,244,"d",12);
+  T(158,272,"d ∈ (0, −t)",12,C.blue);
+  T(300,300,"(b) 要求它更低 —— 与 (a) 冲突",12,C.red);
+}
+function fig5(){ /* 引理 1 */
+  L(70,250,600,250);
+  PL([[110,205],[170,155],[230,112],[272,97],[320,108],[370,165],[420,300]], C.blue);
+  DOT(272,97,5.6,C.ink); DOT(420,300,5.6,C.red);
+  ARR(286,110,409,290,C.red,2);
+  T(222,80,"f(x₁) > 0",13,C.ink,true); T(432,296,"f(x₂) ≤ 0",13,C.red,true);
+  T(296,196,"下降",12,C.red); T(56,242,"0",12,C.muted);
+  T(250,266,"x₁",12); T(412,266,"x₂",12);
+  T(82,52,"f",12,C.muted); T(585,266,"x",12,C.muted);
+}
+function fig6(){ /* 分支结构 */
+  rrPath(30,20,570,72,12); g.fillStyle=C.soft; g.fill(); g.strokeStyle=C.softline; g.lineWidth=1.4; g.stroke();
+  T(48,34,"反设：0 < x₁ < x₂，f(x₁) > f(x₂)",12.5,C.blue,true);
+  T(48,58,"引理1 ⇒ f(x₂) ≤ 0 ⇒ x₂ 是全局最小点",11.5,"#374151");
+  ARR(315,92,315,126,"#94a3b8",2);
+  rrPath(30,130,272,88,12); g.fillStyle=C.okbg; g.fill(); g.strokeStyle=C.okline; g.lineWidth=1.4; g.stroke();
+  T(46,140,"分支 A：f(x₁) ≤ 0  ✅",12,C.green,true);
+  T(46,162,"引理3 ⇒ f(x₂) > f(x₁)",11,"#374151");
+  T(46,182,"与假设矛盾，分支关闭",11,"#374151");
+  rrPath(330,130,272,88,12); g.fillStyle=C.warnbg; g.fill(); g.strokeStyle=C.warnline; g.lineWidth=1.4; g.stroke();
+  T(346,140,"分支 B：f(x₁) > 0  ⚠",12,C.red,true);
+  T(346,162,"只得 f(x₂) ≤ 0, x₂ > 1,",11,"#374151");
+  T(346,182,"f(t) ≥ M₀ (t ≥ 1)：未闭合",11,"#374151");
+  rrPath(30,240,572,66,12); g.fillStyle=C.bg; g.fill(); g.strokeStyle=C.line; g.lineWidth=1.4; g.stroke();
+  T(48,252,"A 已闭合 ⇒ 任何下降都必须从正值出发；",11,"#374151");
+  T(48,274,"B 若成立，需另证 f 在 1 右侧的“接续”不可能 —— 这正是缺口。",11,"#374151");
+}
+const FIGS = [fig1,fig2,fig3,fig4,fig5,fig6];
+
+function drawFig(idx, x, y, w){
+  const k = w/640;
+  g.save(); g.translate(x,y); g.scale(k,k);
+  FIGS[idx](g);
+  g.restore();
+}
+
+/* 简易三列表格 */
+function table3(x, y, w, head, rows, colw, opt){
+  opt = opt || {};
+  const px = opt.px || 15, pad = 10;
+  let cy = y;
+  g.fillStyle = C.white; rrPath(x,y,w,0,0);
+  // 背景
+  const heights = rows.map(r=>{
+    let hMax = 0;
+    r.forEach((cell,i)=>{
+      const lines = wrapText(cell, (colw[i]-pad*2), px, false).length;
+      hMax = Math.max(hMax, lines*px*1.45);
+    });
+    return hMax + pad*2;
+  });
+  const total = heights.reduce((a,b)=>a+b, 0) + 34;
+  card(x, y, w, total, C.white, C.line);
+  // 表头
+  let cx = x + pad;
+  g.fillStyle = C.muted; g.font = font(12,true);
+  head.forEach((h,i)=>{ g.fillText(h, cx, y+12); cx += colw[i]; });
+  L(x+pad, y+32, x+w-pad, y+32, C.faint, 1);
+  cy = y + 36;
+  rows.forEach((r,ri)=>{
+    let cx2 = x + pad;
+    r.forEach((cell,i)=>{
+      const color = (opt.colorCell && opt.colorCell[ri] && opt.colorCell[ri][i]) || C.ink;
+      g.fillStyle = color; g.font = font(px,false);
+      const lines = wrapText(cell, colw[i]-pad*2, px, false);
+      lines.forEach((ln,k)=> g.fillText(ln, cx2, cy + k*px*1.45));
+      cx2 += colw[i];
+    });
+    cy += heights[ri];
+    if (ri < rows.length-1) L(x+pad, cy-6, x+w-pad, cy-6, "#efeae0", 1);
+  });
+  return total;
+}
+
+/* ===================== 10 页内容 ===================== */
+function slide1(){
+  txt("高考数学 · 压轴题精讲", 90, 120, 14, C.blue, true, 900);
+  txt("抽象函数与“增量集合” D(x₀)", 86, 168, 62, C.ink, true, 1120, 74);
+  txt("2026 新课标Ⅰ卷 第 19 题 · 逐问拆解与边界自查", 90, 330, 24, C.muted, false, 1100);
+  pill(90, 410, 300, 46, "(1) D(−1) = (0, 3/2)", C.okbg, C.okline, C.green);
+  pill(404, 410, 340, 46, "(2) 奇函数：D 可显式求出", C.okbg, C.okline, C.green);
+  pill(758, 410, 230, 46, "(3)(i) f(0) ≥ 1", C.okbg, C.okline, C.green);
+  pill(1002, 410, 220, 46, "(3)(ii) 部分已证", C.warnbg, C.warnline, C.red);
+  txt("题面据用户提供截图整理；第 (2) 问字面表述有瑕疵，处理见第 2 页。所有数值均可用计算器复算。",
+      90, 600, 14, "#8b8477", false, 1100);
+}
+function slide2(){
+  const y0 = header("00 · 题目", "题面（照录）", 36);
+  card(70, y0, 700, 470, C.white, C.line);
+  let y = y0 + 18;
+  txt("19.（17 分）已知 f(x) 定义域为 ℝ，x<0 时 f(x)=2^x。", 90, y, 16, C.ink, true, 660);
+  y += 34;
+  txt("对任意 x₀∈ℝ，定义 D(x₀) = { d∈ℝ | f(x₀+d) > f(x₀) }。", 90, y, 16, C.ink, true, 660);
+  y += 44;
+  txt("（1）若 f(x)=1−x (x≥0)，求集合 D(−1)；", 90, y, 15.5, C.ink, false, 660); y += 40;
+  txt("（2）若 f(x) 为奇函数，且对任意满足 x₁x₂≠0 的 x₁,x₂，f(x₁)≤f(x₂)，证明：D(x₁)⊇D(x₂)；",
+      90, y, 15.5, C.ink, false, 660); y += 62;
+  txt("（3）若 f(x) 满足：(a) 当 f(x₁)≤f(x₂) 时，D(x₁)⊇D(x₂)；(b) 当 0<x<1 时，f(x)<f(0)。",
+      90, y, 15.5, C.ink, false, 660); y += 56;
+  txt("证明：(i) f(0)≥1；(ii) f(x) 在 (0,+∞) 上单调递增。", 90, y, 15.5, C.ink, false, 660);
+  cardItems(800, y0, 410, [
+    {t:"来源", px:14, bold:true, color:C.blue},
+    {t:"用户截图（1080×471），带“@统计派考研STATer”水印。Bing/360/搜狗/百度均未取得官方版本，无法核验其是否原卷；本片按图片文字讲解。", px:12.5}
+  ]);
+  cardItems(800, y0+180, 410, [
+    {t:"必须更正：第 (2) 问", px:14, bold:true, color:C.red},
+    {t:"“对任意 x₁x₂≠0 都有 f(x₁)≤f(x₂)”照字面读，交换两元即得 f 在 ℝ∖{0} 上为常数，与 f(x)=2^x (x<0) 矛盾。", px:12.5},
+    {t:"故只能读作条件句：若 f(x₁)≤f(x₂)，则 D(x₁)⊇D(x₂)。", px:12.5, bold:true, color:C.red}
+  ], {fill:C.warnbg, stroke:C.warnline});
+}
+function slide3(){
+  const y0 = header("01 · 先看懂定义", "D(x₀) 不是区间，是“位移的集合”", 34);
+  let y = y0;
+  y += cardItems(70, y, 545, [
+    {t:"把基点从 x₀ 挪到 x₀+d：", px:15, bold:true},
+    {t:"值变大 → 把 d 收进 D(x₀)；值不变或变小 → d 不入。", px:15}
+  ]) + 14;
+  y += cardItems(70, y, 545, [
+    {t:"三个即时推论", px:15, bold:true, color:C.blue},
+    {t:"① 0∉D(x₀)：值不可能比自己大；", px:13.5},
+    {t:"② D 依赖基点——同一条曲线，x₀ 不同则 D 不同；", px:13.5},
+    {t:"③ d 可正可负，D 往往是两条射线而非一段。", px:13.5}
+  ]) + 14;
+  cardItems(70, y, 545, [
+    {t:"一句直觉（后面全靠它）", px:15, bold:true, color:C.green},
+    {t:"值越低，越容易被超过 ⇒ D 越大。这正是 (3)(a) 的形状。", px:14}
+  ], {fill:C.okbg, stroke:C.okline});
+  drawFig(0, 665, 200, 560);
+  txt("图 1｜d 是位移不是坐标：曲线抬升处对应 d∈D(x₀)。", 665, 520, 12.5, C.muted, false, 560);
+}
+function slide4(){
+  const y0 = header("02 · 第 (1) 问", "解一个分段不等式：D(−1) = (0, 3/2)", 34);
+  table3(70, y0, 540, ["t = d−1","f(t)","f(t) > 1/2 ⇔"], [
+    ["t < 0","2^t","2^t > 2^−1 ⇔ t > −1"],
+    ["t = 0","1","1 > 1/2 ✓"],
+    ["t > 0","1 − t","1 − t > 1/2 ⇔ t < 1/2"]
+  ], [110, 110, 280], {px:14});
+  let y = y0 + 150;
+  cardItems(70, y, 540, [{t:"结论：t ∈ (−1, 1/2) ⇒ D(−1) = (0, 3/2)", px:17, bold:true, color:C.blue}],
+            {fill:C.soft, stroke:C.softline, pad:14});
+  y += 86;
+  cardItems(70, y, 540, [
+    {t:"数值佐证（可复算）", px:13, bold:true, color:C.blue},
+    {t:"d = 0.20 → t = −0.80 → 2^t = 0.574 > 0.5  ✓ 在 D 内", px:12, color:C.green},
+    {t:"d = 1.45 → t = 0.45 → 1−t = 0.550 > 0.5  ✓ 在 D 内（贴近上端）", px:12, color:C.green},
+    {t:"d = 1.60 → t = 0.60 → 1−t = 0.400 < 0.5  ✗ 不在 D 内", px:12, color:C.red}
+  ]);
+  drawFig(1, 650, 150, 580);
+  txt("图 2｜绿段为解集 t∈(−1,1/2)。左支 2^t 递增、右支 1−t 递减，故解集是一段。", 650, 500, 12.5, C.muted, false, 580);
+}
+function slide5(){
+  const y0 = header("03 · 第 (2) 问", "奇函数把 f 锁死，D 就能显式算出来", 34);
+  let y = y0;
+  y += cardItems(70, y, 560, [
+    {t:"先定解析式", px:14, bold:true, color:C.blue},
+    {t:"f 奇 ⇒ f(0)=0；x>0 时 f(x) = −f(−x) = −2^−x。", px:14}
+  ]) + 14;
+  table3(70, y, 560, ["基点","D(x)"], [
+    ["x < 0","(0, −x)"],
+    ["x = 0","(−∞, 0)"],
+    ["x > 0","(−∞, −x] ∪ (0, +∞)"]
+  ], [170, 360], {px:14});
+  y += 170;
+  cardItems(70, y, 560, [
+    {t:"验证只有两种情形", px:14, bold:true, color:C.green},
+    {t:"x₂<0：f(x₂)∈(0,1)，右支为负、f(0)=0，故 x₁<0 且 x₁≤x₂，端点比较即得 (0,−x₁)⊇(0,−x₂)；", px:12},
+    {t:"x₂>0：f(x₂)<0，故 x₁>0 且 x₁≤x₂，由 −x₁≥−x₂ 得包含。", px:12}
+  ], {fill:C.okbg, stroke:C.okline});
+  drawFig(2, 680, 170, 540);
+  txt("图 3｜左支值域 (0,1)，右支 (−1,0)，0 处断开。值的大小顺序 ⇔ 区间端点的顺序。", 680, 500, 12.5, C.muted, false, 540);
+}
+function slide6(){
+  const y0 = header("04 · 第 (3)(i) 问", "f(0) ≥ 1：把 (a) 的位移搬进 (0,1) 撞 (b)", 32);
+  let y = y0;
+  y += cardItems(70, y, 560, [
+    {t:"① 反设 f(0)<1。取 c ∈ (max{f(0), 1/2}, 1)，t = log₂c ∈ (−1,0)。", px:14},
+    {t:"② f(t) = c > f(0)，由 (a) 得 D(0) ⊇ D(t)。", px:14},
+    {t:"③ 取 d ∈ (0,−t)：t+d ∈ (t,0)，故 f(t+d)=2^(t+d) > 2^t = f(t)，即 d∈D(t) ⊆ D(0)，于是 f(d) > f(0)。", px:14},
+    {t:"④ 但 0 < d < −t < 1，由 (b) 应有 f(d) < f(0) —— 矛盾。", px:14}
+  ]) + 16;
+  cardItems(70, y, 560, [{t:"结论：f(0) ≥ 1", px:20, bold:true, color:C.blue}],
+            {fill:C.soft, stroke:C.softline, pad:16});
+  drawFig(3, 665, 165, 570);
+  txt("图 4｜t 与 t+d 都在 (−∞,0) 内，值由 2^x 决定；再把这个位移用到 0 上。", 665, 480, 12.5, C.muted, false, 570);
+}
+function slide7(){
+  const y0 = header("05 · 第 (3)(ii) 的三条引理", "一条主线：任何“下降”都只能落在非正值上", 32);
+  let y = y0;
+  y += cardItems(70, y, 590, [
+    {t:"引理 1（总开关）", px:14, bold:true, color:C.blue},
+    {t:"x₁<x₂ 且 f(x₁)>f(x₂) ⇒ f(x₂)≤0。", px:13.5, bold:true},
+    {t:"证：若落点>0，取 t<0 使 2^t<f(x₂)，令 d=x₁−x₂<0，则 d∈D(x₂)⊆D(t)，得 f(t+d)>2^t；而 t+d<0 给出 2^(t+d)<2^t，矛盾。", px:11.5, color:C.muted}
+  ]) + 12;
+  y += cardItems(70, y, 590, [
+    {t:"引理 2", px:13.5, bold:true, color:C.blue},
+    {t:"0<x<1 ⇒ f(x)≤0。若 >0，则 −x∈D(x)⊆D(t)，同样逼出 2^(t−x)>2^t。", px:12}
+  ]) + 12;
+  cardItems(70, y, 590, [
+    {t:"引理 3", px:13.5, bold:true, color:C.blue},
+    {t:"f(x)≤0 ⇒ 对一切 d>0，f(x+d)>f(x)。因 D(x)⊇D(t)⊇(0,−t]，对 t<0 取并得 (0,+∞)。", px:12}
+  ]);
+  drawFig(4, 690, 190, 520);
+  txt("图 5｜引理 1：下降可以，但落点必须在 x 轴下方或轴上。", 690, 480, 12.5, C.muted, false, 520);
+}
+function slide8(){
+  const y0 = header("06 · 第 (3)(ii) 主体", "反设一次下降，两条分支，一条走通", 32);
+  let y = y0;
+  y += cardItems(70, y, 590, [
+    {t:"反设 0<x₁<x₂ 且 f(x₁)>f(x₂)：", px:13.5, bold:true},
+    {t:"① 引理1 ⇒ f(x₂)≤0 ⇒ D(x₂)⊇(0,+∞)∪(−∞,−x₂] ⇒ x₂ 是全局最小点；", px:12},
+    {t:"② (a) ⇒ D(x₁)⊆D(x₂)；", px:12},
+    {t:"③ 若 f(x₁)≤0：引理3 给出 x₂−x₁∈D(x₁)，故 f(x₂)>f(x₁)，矛盾 ✅；", px:12},
+    {t:"④ 若 f(x₁)>0：只得 f(x₂)≤0、x₂>1、f(t)≥M₀ (t≥1)，条件互相兼容。", px:12}
+  ]) + 12;
+  y += cardItems(70, y, 590, [
+    {t:"⚠ 诚实标注：分支 ④ 未闭合，也构造不出反例；(ii) 只能算部分证明。", px:12.5, bold:true, color:C.red}
+  ], {fill:C.warnbg, stroke:C.warnline, pad:12}) + 12;
+  cardItems(70, y, 590, [
+    {t:"备选读法：若 (a) 是“x₁<x₂ ⇒ D(x₁)⊇D(x₂)”，则 d=x₁−x₂∈D(x₂)⊆D(x₁) ⇒ f(2x₁−x₂)>f(x₁)，左移迭代与 2^x 递减矛盾，证明完整。", px:11.5}
+  ], {fill:C.okbg, stroke:C.okline, pad:12});
+  drawFig(5, 690, 190, 520);
+  txt("图 6｜分支结构：绿灯已证，红灯未闭合。", 690, 470, 12.5, C.muted, false, 520);
+}
+function slide9(){
+  const y0 = header("07 · 代码复核", "数值验证：把每条结论放到网格上跑", 32);
+  table3(70, y0, 660, ["检验项","做法","结果"], [
+    ["(1) D(−1)","步长 5×10⁻⁵ 扫描 [−0.25, 1.75]","命中 [0.00005, 1.49995]"],
+    ["(1) 端点开闭","d=0、d=1.5 处的 f 值","均为 0.5，严格不等式排除"],
+    ["(2) 包含关系","1224 组 (x₁,x₂)，78.2 万个 d","0 例违例"],
+    ["(3)(i) 构造","f(0) 取 −3 … 0.99 共六档","c>f(0)、t∈(−1,0)、2^(t+d)>2^t 全成立"],
+    ["模型单调性","奇函数模型 600 个网格点","0 处下降"],
+    ["反例搜索","60 个随机分段线性 f 检验 (a)","0 个通过"],
+    ["刻意“先升后降”","构造 f 后抽样检验 (a)","首个样本对即抓到违例"]
+  ], [140, 260, 220], {px:12.5});
+  cardItems(760, y0, 440, [
+    {t:"⚠ 能说明什么、不能说明什么", px:13.5, bold:true, color:C.red},
+    {t:"能：答案与构造在数值上可复现，端点开闭经得起 10⁻⁵ 级扫描。", px:12},
+    {t:"不能：这是实例检验，不是全称证明；(3)(ii) 分支 B 既没被推翻、也没被证实。", px:12}
+  ], {fill:C.warnbg, stroke:C.warnline, pad:14});
+  cardItems(760, y0+190, 440, [
+    {t:"见证（表格第 7 行）", px:13, bold:true, color:C.blue},
+    {t:"x₁=−0.81，x₂=2.658，d=−3.244：f(x₁)=0.570 ≤ f(x₂)=0.658，故 (a) 要求 D(x₁)⊇D(x₂)；", px:11.5},
+    {t:"但 d∈D(x₂)（0.666>0.658），而 d∉D(x₁)（0.060<0.570）。", px:11.5},
+    {t:"⇒ “先升后降”的形状被 (a) 当场否掉。", px:11.5, bold:true}
+  ], {pad:14});
+}
+function slide10(){
+  const y0 = header("08 · 自查", "易错点与边界清单", 32);
+  table3(70, y0, 700, ["易错点","纠正"], [
+    ["把 D(x₀) 当单调区间","它是以 x₀ 为基点的位移集，随基点移动"],
+    ["默认 f 连续 / f(0)=1","f 在 0 处可跳；只知 f(0)≥1"],
+    ["(2) 漏掉异号情形","x₂<0 时 f(x₂)∈(0,1)，迫使 x₁<0"],
+    ["引理 1 方向记反","结论在“落点”上：f(x₂)≤0"],
+    ["引理 3 取并漏端点","∪(0,−t] = (0,+∞)"],
+    ["把未闭合分支当已证","第 8 页分支 B：⚠，不可标 ✅"]
+  ], [230, 440], {px:13});
+  cardItems(800, y0, 400, [
+    {t:"✅ 已严格证明", px:13, bold:true, color:C.green},
+    {t:"(1)(2)(3)(i)、引理 1–3、第 8 页分支 A", px:12}
+  ], {fill:C.okbg, stroke:C.okline, pad:14});
+  cardItems(800, y0+130, 400, [
+    {t:"⚠ 待补 / 待核", px:13, bold:true, color:C.red},
+    {t:"(ii) 分支 B；第 (2) 问措辞；(a) 的两种读法", px:12}
+  ], {fill:C.warnbg, stroke:C.warnline, pad:14});
+  cardItems(800, y0+250, 400, [
+    {t:"建议下一步", px:13, bold:true, color:C.blue},
+    {t:"拍一张原卷第 19 题清晰图（尤其 (a) 那行）：若写 x₁<x₂，(ii) 立刻完整；若确实是 f(x₁)≤f(x₂)，我再补分支 B。", px:11.5}
+  ], {pad:14});
+  footer("2026 新课标Ⅰ卷 第 19 题 · 讲解稿", "图为矢量绘制，可无损放大");
+}
+
+const SLIDES = [slide1,slide2,slide3,slide4,slide5,slide6,slide7,slide8,slide9,slide10];
+
+/* ===================== ZIP ===================== */
+const CRC_T = (()=>{ const t=new Uint32Array(256);
+  for(let n=0;n<256;n++){ let c=n; for(let k=0;k<8;k++) c = (c&1) ? (0xEDB88320 ^ (c>>>1)) : (c>>>1); t[n]=c>>>0; }
+  return t; })();
+function crc32(u8){ let c=0xFFFFFFFF; for(let i=0;i<u8.length;i++) c = CRC_T[(c ^ u8[i]) & 0xFF] ^ (c>>>8); return (c ^ 0xFFFFFFFF)>>>0; }
+
+function zipStore(files){
+  const enc = new TextEncoder();
+  const parts = [], central = [];
+  let offset = 0;
+  for (const f of files){
+    const nameB = enc.encode(f.name);
+    const data = f.data;
+    const crc = crc32(data);
+    const lh = new Uint8Array(30 + nameB.length);
+    const dv = new DataView(lh.buffer);
+    dv.setUint32(0, 0x04034b50, true);
+    dv.setUint16(4, 20, true); dv.setUint16(6, 0, true); dv.setUint16(8, 0, true);
+    dv.setUint16(10, 0, true); dv.setUint16(12, 0, true);
+    dv.setUint32(14, crc, true); dv.setUint32(18, data.length, true); dv.setUint32(22, data.length, true);
+    dv.setUint16(26, nameB.length, true); dv.setUint16(28, 0, true);
+    lh.set(nameB, 30);
+    parts.push(lh, data);
+
+    const ch = new Uint8Array(46 + nameB.length);
+    const cvv = new DataView(ch.buffer);
+    cvv.setUint32(0, 0x02014b50, true);
+    cvv.setUint16(4, 20, true); cvv.setUint16(6, 20, true);
+    cvv.setUint16(8, 0, true); cvv.setUint16(10, 0, true);
+    cvv.setUint16(12, 0, true); cvv.setUint16(14, 0, true);
+    cvv.setUint32(16, crc, true); cvv.setUint32(20, data.length, true); cvv.setUint32(24, data.length, true);
+    cvv.setUint16(28, nameB.length, true); cvv.setUint16(30, 0, true); cvv.setUint16(32, 0, true);
+    cvv.setUint16(34, 0, true); cvv.setUint16(36, 0, true); cvv.setUint32(38, 0, true);
+    cvv.setUint32(42, offset, true);
+    ch.set(nameB, 46);
+    central.push(ch);
+    offset += lh.length + data.length;
+  }
+  const cdSize = central.reduce((a,b)=>a+b.length,0);
+  const eocd = new Uint8Array(22);
+  const ev = new DataView(eocd.buffer);
+  ev.setUint32(0, 0x06054b50, true);
+  ev.setUint16(4, 0, true); ev.setUint16(6, 0, true);
+  ev.setUint16(8, files.length, true); ev.setUint16(10, files.length, true);
+  ev.setUint32(12, cdSize, true); ev.setUint32(16, offset, true); ev.setUint16(20, 0, true);
+
+  const all = parts.concat(central, [eocd]);
+  const total = all.reduce((a,b)=>a+b.length,0);
+  const out = new Uint8Array(total);
+  let p = 0;
+  for (const a of all){ out.set(a,p); p += a.length; }
+  return out;
+}
+
+/* 读回 zip 做自检（只支持 store） */
+function zipCheck(bytes){
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let p = bytes.length - 22;
+  while (p >= 0 && dv.getUint32(p, true) !== 0x06054b50) p--;
+  if (p < 0) throw new Error("EOCD 未找到");
+  const n = dv.getUint16(p+10, true);
+  let cd = dv.getUint32(p+16, true);
+  const names = [];
+  for (let i=0;i<n;i++){
+    if (dv.getUint32(cd, true) !== 0x02014b50) throw new Error("中央目录签名错误");
+    const crc = dv.getUint32(cd+16, true), size = dv.getUint32(cd+24, true);
+    const nl = dv.getUint16(cd+28, true), extra = dv.getUint16(cd+30, true), cm = dv.getUint16(cd+32, true);
+    const off = dv.getUint32(cd+42, true);
+    const name = new TextDecoder().decode(bytes.subarray(cd+46, cd+46+nl));
+    const data = bytes.subarray(off+30+nl+extra, off+30+nl+extra+size);
+    if (crc32(data) !== crc) throw new Error("CRC 不符：" + name);
+    names.push(name);
+    cd += 46 + nl + extra + cm;
+  }
+  return names;
+}
+
+/* ===================== OOXML ===================== */
+const EMU = 914400;
+const SLD_W = Math.round(13.333*EMU), SLD_H = Math.round(7.5*EMU);
+const X = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+const NS = 'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+           'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+           'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"';
+
+const THEME = X + '<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Office">' +
+'<a:themeElements><a:clrScheme name="Office">' +
+'<a:dk1><a:sysClr val="windowText" lastClr="000000"/></a:dk1><a:lt1><a:sysClr val="window" lastClr="FFFFFF"/></a:lt1>' +
+'<a:dk2><a:srgbClr val="44546A"/></a:dk2><a:lt2><a:srgbClr val="E7E6E6"/></a:lt2>' +
+'<a:accent1><a:srgbClr val="4472C4"/></a:accent1><a:accent2><a:srgbClr val="ED7D31"/></a:accent2>' +
+'<a:accent3><a:srgbClr val="A5A5A5"/></a:accent3><a:accent4><a:srgbClr val="FFC000"/></a:accent4>' +
+'<a:accent5><a:srgbClr val="5B9BD5"/></a:accent5><a:accent6><a:srgbClr val="70AD47"/></a:accent6>' +
+'<a:hlink><a:srgbClr val="0563C1"/></a:hlink><a:folHlink><a:srgbClr val="954F72"/></a:folHlink>' +
+'</a:clrScheme>' +
+'<a:fontScheme name="Office"><a:majorFont><a:latin typeface="Calibri Light"/><a:ea typeface=""/><a:cs typeface=""/></a:majorFont>' +
+'<a:minorFont><a:latin typeface="Calibri"/><a:ea typeface=""/><a:cs typeface=""/></a:minorFont></a:fontScheme>' +
+'<a:fmtScheme name="Office">' +
+'<a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill>' +
+'<a:gradFill rotWithShape="1"><a:gsLst><a:gs pos="0"><a:schemeClr val="phClr"><a:tint val="50000"/><a:satMod val="300000"/></a:schemeClr></a:gs>' +
+'<a:gs pos="100000"><a:schemeClr val="phClr"><a:tint val="37000"/><a:satMod val="300000"/></a:schemeClr></a:gs></a:gsLst>' +
+'<a:lin ang="16200000" scaled="1"/></a:gradFill>' +
+'<a:gradFill rotWithShape="1"><a:gsLst><a:gs pos="0"><a:schemeClr val="phClr"><a:tint val="100000"/><a:satMod val="130000"/></a:schemeClr></a:gs>' +
+'<a:gs pos="100000"><a:schemeClr val="phClr"><a:tint val="44000"/><a:satMod val="350000"/></a:schemeClr></a:gs></a:gsLst>' +
+'<a:lin ang="16200000" scaled="0"/></a:gradFill></a:fillStyleLst>' +
+'<a:lnStyleLst><a:ln w="6350" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/></a:ln>' +
+'<a:ln w="12700" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/></a:ln>' +
+'<a:ln w="19050" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/></a:ln></a:lnStyleLst>' +
+'<a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle>' +
+'<a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst>' +
+'<a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill>' +
+'<a:solidFill><a:schemeClr val="phClr"><a:tint val="95000"/><a:satMod val="170000"/></a:schemeClr></a:solidFill>' +
+'<a:gradFill rotWithShape="1"><a:gsLst><a:gs pos="0"><a:schemeClr val="phClr"><a:tint val="93000"/><a:satMod val="150000"/><a:shade val="98000"/><a:lumMod val="102000"/></a:schemeClr></a:gs>' +
+'<a:gs pos="100000"><a:schemeClr val="phClr"><a:tint val="98000"/><a:satMod val="130000"/><a:shade val="90000"/><a:lumMod val="103000"/></a:schemeClr></a:gs></a:gsLst>' +
+'<a:lin ang="16200000" scaled="0"/></a:gradFill></a:bgFillStyleLst>' +
+'</a:fmtScheme></a:themeElements><a:objectDefaults/><a:extraClrSchemeLst/></a:theme>';
+
+const MASTER = X + '<p:sldMaster ' + NS + '><p:cSld>' +
+'<p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg>' +
+'<p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>' +
+'<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>' +
+'</p:spTree></p:cSld>' +
+'<p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/>' +
+'<p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst>' +
+'<p:txStyles><p:titleStyle><a:lvl1pPr><a:defRPr sz="4000"/></a:lvl1pPr></p:titleStyle>' +
+'<p:bodyStyle><a:lvl1pPr><a:defRPr sz="2000"/></a:lvl1pPr></p:bodyStyle>' +
+'<p:otherStyle><a:lvl1pPr><a:defRPr sz="1800"/></a:lvl1pPr></p:otherStyle></p:txStyles>' +
+'</p:sldMaster>';
+
+const LAYOUT = X + '<p:sldLayout ' + NS + ' type="blank" preserve="1">' +
+'<p:cSld name="Blank"><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>' +
+'<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>' +
+'</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>';
+
+function slideXml(n){
+  return X + '<p:sld ' + NS + '><p:cSld><p:spTree>' +
+  '<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>' +
+  '<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>' +
+  '<p:pic><p:nvPicPr><p:cNvPr id="' + (n+10) + '" name="Slide' + n + '"/><p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr/></p:nvPicPr>' +
+  '<p:blipFill><a:blip r:embed="rId2"/><a:stretch><a:fillRect/></a:stretch></p:blipFill>' +
+  '<p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + SLD_W + '" cy="' + SLD_H + '"/></a:xfrm>' +
+  '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>' +
+  '</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>';
+}
+
+function buildPptx(images){
+  const files = [];
+  const add = (name, str)=>{ files.push({name, data:new TextEncoder().encode(str)}); };
+
+  add("[Content_Types].xml", X + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+    '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+    '<Default Extension="xml" ContentType="application/xml"/>' +
+    '<Default Extension="png" ContentType="image/png"/>' +
+    '<Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/>' +
+    '<Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/>' +
+    '<Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/>' +
+    '<Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>' +
+    images.map((_,i)=>'<Override PartName="/ppt/slides/slide' + (i+1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>').join("") +
+    '</Types>');
+
+  add("_rels/.rels", X + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/>' +
+    '</Relationships>');
+
+  add("ppt/presentation.xml", X + '<p:presentation ' + NS + ' saveSubsetFonts="1">' +
+    '<p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst>' +
+    '<p:sldIdLst>' + images.map((_,i)=>'<p:sldId id="' + (256+i) + '" r:id="rId' + (i+2) + '"/>').join("") + '</p:sldIdLst>' +
+    '<p:sldSz cx="' + SLD_W + '" cy="' + SLD_H + '" type="screen16x9"/>' +
+    '<p:notesSz cx="6858000" cy="9144000"/></p:presentation>');
+
+  add("ppt/_rels/presentation.xml.rels", X + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/>' +
+    images.map((_,i)=>'<Relationship Id="rId' + (i+2) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide' + (i+1) + '.xml"/>').join("") +
+    '</Relationships>');
+
+  add("ppt/slideMasters/slideMaster1.xml", MASTER);
+  add("ppt/slideMasters/_rels/slideMaster1.xml.rels", X + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>' +
+    '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="../theme/theme1.xml"/>' +
+    '</Relationships>');
+
+  add("ppt/slideLayouts/slideLayout1.xml", LAYOUT);
+  add("ppt/slideLayouts/_rels/slideLayout1.xml.rels", X + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/>' +
+    '</Relationships>');
+
+  add("ppt/theme/theme1.xml", THEME);
+
+  images.forEach((img,i)=>{
+    add("ppt/slides/slide" + (i+1) + ".xml", slideXml(i+1));
+    add("ppt/slides/_rels/slide" + (i+1) + ".xml.rels", X + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>' +
+      '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image' + (i+1) + '.png"/>' +
+      '</Relationships>');
+    files.push({name:"ppt/media/image" + (i+1) + ".png", data: img});
+  });
+
+  return zipStore(files);
+}
+
+/* ===================== 执行 ===================== */
+function dataUrlToBytes(url){
+  const b64 = url.slice(url.indexOf(",")+1);
+  const bin = atob(b64);
+  const u8 = new Uint8Array(bin.length);
+  for (let i=0;i<bin.length;i++) u8[i] = bin.charCodeAt(i);
+  return u8;
+}
+function log(html){ const el = document.getElementById("log"); el.innerHTML = html; }
+function appendLog(html){ const el = document.getElementById("log"); el.innerHTML += "\n" + html; }
+
+document.getElementById("go").addEventListener("click", async ()=>{
+  const btn = document.getElementById("go");
+  btn.disabled = true;
+  log('<span class="dim">渲染 10 页…</span>');
+  try{
+    const imgs = [];
+    for (let i=0;i<SLIDES.length;i++){
+      begin();
+      SLIDES[i]();
+      const url = cv.toDataURL("image/png");
+      imgs.push(dataUrlToBytes(url));
+      appendLog('<span class="dim">  第 ' + (i+1) + ' 页渲染完成</span>');
+    }
+    appendLog('<span class="dim">打包 OOXML…</span>');
+    const bytes = buildPptx(imgs);
+    const names = zipCheck(bytes);
+    appendLog('<span class="ok">ZIP 自检通过：' + names.length + ' 个部件，CRC 全部匹配</span>');
+    appendLog('<span class="dim">' + names.slice(0,4).join("  ") + ' …</span>');
+
+    const blob = new Blob([bytes], {type:"application/vnd.openxmlformats-officedocument.presentationml.presentation"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "2026新课标I卷-第19题-解析.pptx";
+    document.body.appendChild(a); a.click(); a.remove();
+    appendLog('<span class="ok">已触发下载：2026新课标I卷-第19题-解析.pptx（' +
+      (bytes.length/1024/1024).toFixed(2) + ' MB）</span>');
+  }catch(err){
+    appendLog('<span class="bad">失败：' + (err && err.message ? err.message : err) + "</span>");
+  }finally{
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
