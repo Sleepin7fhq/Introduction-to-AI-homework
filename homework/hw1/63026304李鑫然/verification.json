@@ -1,0 +1,21 @@
+{
+  "execution": "Python standard library, actually executed",
+  "random_seed": 202519,
+  "theoretical_answer": "3*sqrt(3)",
+  "answer_decimal": 5.196152422706632,
+  "part1_grid_points": 2401,
+  "part1_maximum": 5.196152422706632,
+  "part1_argmax_radians": 0.5235987755982989,
+  "lemma_cases_passed": 5075,
+  "phase_points": 721,
+  "phase_scan_minimum_peak": 5.196152422706632,
+  "phase_scan_maximum_peak": 6.0,
+  "phase_zero_peak": 5.196152422706632,
+  "phase_pi_peak": 6.0,
+  "constructive_lower_bound_cases_passed": 721,
+  "dense_crosscheck_phases": 25,
+  "dense_crosscheck_max_gap": 4.5648657476249355e-07,
+  "polynomial_identity_cases_passed": 2001,
+  "dsh_execution": "Not executed in this session; prompts are supplied separately",
+  "scope": "Finite numerical checks support, but do not replace, the analytical proof"
+}
