@@ -1,0 +1,6 @@
+/*
+  Cache-Control: no-cache
+  X-Content-Type-Options: nosniff
+
+/manifest.webmanifest
+  Content-Type: application/manifest+json; charset=utf-8
