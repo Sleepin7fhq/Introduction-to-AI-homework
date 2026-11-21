@@ -1,0 +1,69 @@
+:root{
+  --bg:#F6F2FB; --card:#FFFFFF; --ink:#2C2438; --muted:#7B7189;
+  --line:#E8E0F2; --green:#6B4FA3; --green-soft:#EFE9F9;
+  --amber:#B9803F; --amber-soft:#FBF2E6; --red:#B5486A; --red-soft:#FBECF1;
+  --radius:18px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",sans-serif;
+  font-size:16px;line-height:1.7;
+  background-image:radial-gradient(circle at 12% 8%, #FBF7FF 0%, transparent 45%),
+                   radial-gradient(circle at 88% 92%, #F5EEFB 0%, transparent 45%);
+}
+.wrap{max-width:1120px;margin:0 auto;padding:26px 22px 60px}
+
+header.top{display:flex;align-items:center;gap:14px;margin-bottom:22px}
+.logo{
+  width:46px;height:46px;border-radius:14px;background:var(--green);color:#fff;
+  display:grid;place-items:center;font-size:22px;font-weight:600;flex:none;
+  box-shadow:0 6px 16px rgba(107,79,163,.24);text-decoration:none;
+}
+.brand h1{margin:0;font-size:20px;letter-spacing:.5px;font-weight:650}
+.brand p{margin:2px 0 0;font-size:13px;color:var(--muted)}
+.spacer{flex:1}
+.badge{
+  font-size:12px;color:var(--muted);border:1px solid var(--line);
+  padding:5px 11px;border-radius:999px;background:#fff;white-space:nowrap;cursor:pointer;
+  transition:.18s;text-decoration:none;display:inline-block;
+}
+.badge:hover{border-color:var(--green);color:var(--green)}
+.badge b{color:var(--green);font-weight:600}
+
+.btn{
+  border:none;border-radius:12px;padding:10px 20px;font-size:14.5px;cursor:pointer;
+  font-family:inherit;font-weight:550;transition:.18s;white-space:nowrap;
+}
+.btn.primary{background:var(--green);color:#fff;box-shadow:0 6px 16px rgba(107,79,163,.22)}
+.btn.primary:hover{background:#573E88;transform:translateY(-1px)}
+.btn.primary:disabled{background:#C9C3D4;box-shadow:none;cursor:not-allowed;transform:none}
+.btn.ghost{background:transparent;color:var(--muted);border:1px solid var(--line)}
+.btn.ghost:hover{color:var(--ink);border-color:#CFC4E2}
+.btn.small{padding:7px 14px;font-size:13px;border-radius:10px}
+
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:24px;box-shadow:0 1px 2px rgba(0,0,0,.03),0 12px 32px rgba(76,60,110,.05);
+}
+
+.toast{
+  position:fixed;left:50%;bottom:34px;transform:translateX(-50%) translateY(20px);
+  background:var(--ink);color:#fff;padding:11px 22px;border-radius:12px;font-size:14px;
+  opacity:0;pointer-events:none;transition:.25s;z-index:80;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.35);
+  border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px;margin-right:6px}
+.spinner.dark{border-color:rgba(0,0,0,.15);border-top-color:var(--green)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hidden{display:none!important}
+
+/* ---------- 角色形象 ---------- */
+.logo-img{background:url("mizuki.jpg") center/cover;overflow:hidden;color:transparent}
+.icon-img{background:url("mizuki.jpg") center/cover;color:transparent}
+.hero-avatar{
+  width:104px;height:104px;border-radius:50%;background:url("mizuki.jpg") center/cover;
+  margin:0 auto 16px;border:4px solid #fff;box-shadow:0 12px 30px rgba(107,79,163,.28);
+}
