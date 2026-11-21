@@ -1,0 +1,15 @@
+{
+  "name": "nawa-studio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "奶蛙舞台：Python 执行过程的三维教学展示",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "python tools/serve.py --open",
+    "preview": "python tools/serve-public.py --port 8877",
+    "record:demos": "python tools/build-demos.py",
+    "build": "node tools/build-public.mjs",
+    "test": "python -m unittest discover -s tests -v",
+    "check:release": "python tools/check-release.py"
+  }
+}
