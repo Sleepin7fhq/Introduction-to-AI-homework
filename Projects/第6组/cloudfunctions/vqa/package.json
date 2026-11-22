@@ -1,0 +1,9 @@
+{
+  "name": "vqa",
+  "version": "1.0.0",
+  "description": "视障者随手拍助手：图片质量判断与任务型视觉问答",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}
