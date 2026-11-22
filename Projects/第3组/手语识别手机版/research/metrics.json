@@ -1,0 +1,133 @@
+{
+  "validation": {
+    "single/0.05": {
+      "n": 1421,
+      "top1": 377,
+      "top5": 644
+    },
+    "single/0.22": {
+      "n": 1421,
+      "top1": 354,
+      "top5": 638
+    },
+    "dual/0.05": {
+      "n": 1421,
+      "top1": 644,
+      "top5": 1007
+    },
+    "dual/0.22": {
+      "n": 1421,
+      "top1": 608,
+      "top5": 999
+    },
+    "trajectory/0.05": {
+      "n": 1421,
+      "top1": 578,
+      "top5": 902
+    },
+    "trajectory/0.22": {
+      "n": 1421,
+      "top1": 553,
+      "top5": 902
+    },
+    "full/0.05": {
+      "n": 1421,
+      "top1": 721,
+      "top5": 1064
+    },
+    "full/0.22": {
+      "n": 1421,
+      "top1": 685,
+      "top5": 1047
+    },
+    "movement_weighted/0.05": {
+      "n": 1421,
+      "top1": 731,
+      "top5": 1092
+    },
+    "movement_weighted/0.22": {
+      "n": 1421,
+      "top1": 709,
+      "top5": 1067
+    },
+    "geometry_weighted/0.05": {
+      "n": 1421,
+      "top1": 753,
+      "top5": 1095
+    },
+    "geometry_weighted/0.22": {
+      "n": 1421,
+      "top1": 725,
+      "top5": 1083
+    }
+  },
+  "selected": [
+    "geometry_weighted",
+    0.05
+  ],
+  "configs": {
+    "single": 0.05,
+    "dual": 0.05,
+    "trajectory": 0.05,
+    "geometry_weighted": 0.05
+  },
+  "legacy_test_signers": [
+    "Participant_01",
+    "Participant_02",
+    "Participant_05"
+  ],
+  "five": {
+    "single": {
+      "n": 609,
+      "top1": 139,
+      "top5": 247
+    },
+    "dual": {
+      "n": 609,
+      "top1": 291,
+      "top5": 453
+    },
+    "trajectory": {
+      "n": 609,
+      "top1": 216,
+      "top5": 379
+    },
+    "geometry_weighted": {
+      "n": 609,
+      "top1": 336,
+      "top5": 470
+    }
+  },
+  "seven": {
+    "single": {
+      "n": 609,
+      "top1": 172,
+      "top5": 273
+    },
+    "dual": {
+      "n": 609,
+      "top1": 318,
+      "top5": 471
+    },
+    "trajectory": {
+      "n": 609,
+      "top1": 258,
+      "top5": 403
+    },
+    "geometry_weighted": {
+      "n": 609,
+      "top1": 380,
+      "top5": 510
+    }
+  },
+  "legacy_reference": {
+    "n": 609,
+    "top1": 212,
+    "top5": 265
+  },
+  "fixed_legacy_blend": {
+    "n": 609,
+    "top1": 383,
+    "top5": 520
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "frames": {
+    "Participant_01": {
+      "words": 203,
+      "frames": 3482,
+      "missing_ids": []
+    },
+    "Participant_02": {
+      "words": 203,
+      "frames": 2757,
+      "missing_ids": []
+    },
+    "Participant_03": {
+      "words": 203,
+      "frames": 2929,
+      "missing_ids": []
+    },
+    "Participant_04": {
+      "words": 203,
+      "frames": 2970,
+      "missing_ids": []
+    },
+    "Participant_05": {
+      "words": 203,
+      "frames": 3261,
+      "missing_ids": []
+    },
+    "Participant_06": {
+      "words": 203,
+      "frames": 2869,
+      "missing_ids": []
+    },
+    "Participant_07": {
+      "words": 203,
+      "frames": 2875,
+      "missing_ids": []
+    },
+    "Participant_08": {
+      "words": 203,
+      "frames": 2678,
+      "missing_ids": []
+    },
+    "Participant_09": {
+      "words": 203,
+      "frames": 2738,
+      "missing_ids": []
+    },
+    "Participant_10": {
+      "words": 203,
+      "frames": 2987,
+      "missing_ids": []
+    }
+  },
+  "label_mismatches": [],
+  "published_keypoint_word_overlap": [
+    "作业",
+    "你",
+    "便宜",
+    "信",
+    "借1-2",
+    "免费",
+    "公园",
+    "共同",
+    "再见",
+    "农民",
+    "凉",
+    "分数2-2",
+    "切",
+    "到",
+    "努力",
+    "医生",
+    "医院",
+    "卖",
+    "危险1-2",
+    "厨师",
+    "去",
+    "发",
+    "发烧",
+    "右"
+  ],
+  "original_video_word_overlap": {
+    "Participant_07": [
+      "0072"
+    ],
+    "Participant_09": [
+      "0072"
+    ]
+  }
+}
