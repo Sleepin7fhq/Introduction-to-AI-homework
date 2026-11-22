@@ -1,0 +1,11 @@
+{
+ "shape": [
+  1024,
+  128
+ ],
+ "dtype": "float32-le",
+ "file": "fbank.bin",
+ "wav": "golden.wav",
+ "mean": -4.2677393,
+ "std": 4.5689974
+}

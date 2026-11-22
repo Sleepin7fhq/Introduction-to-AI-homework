@@ -1,0 +1,10 @@
+{
+  "sample_rate": 16000,
+  "duration_sec": 3.0,
+  "frames": 298,
+  "max_length": 1024,
+  "num_mel_bins": 128,
+  "mean": -4.2677393,
+  "std": 4.5689974,
+  "note": "fbank.npy = AST 归一化后的 input_values，形状 (1024,128)；C++ 侧应逐元素逼近"
+}

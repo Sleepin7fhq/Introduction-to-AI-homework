@@ -1,0 +1,12 @@
+﻿模型文件说明
+============
+本压缩包没有包含 ast_audioset_int8.onnx（约 91 MB），
+因为 GitHub 对单个文件有 100 MB 限制，且仓库不适合放太大的模型。
+
+想运行：
+1. 把 ast_audioset_int8.onnx 放到 models\ 目录；
+2. 双击 1-启动.bat，再双击 2-看结果.bat。
+
+模型可以用以下脚本重新生成：
+  python scripts\export_ast_onnx.py --hf-dir models\hf_ast --out-dir models
+  python scripts\quantize_model.py

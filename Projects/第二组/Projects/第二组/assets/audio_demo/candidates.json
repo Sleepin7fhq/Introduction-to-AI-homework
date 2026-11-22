@@ -1,0 +1,79 @@
+{
+  "loud_talk_a": {
+    "type": "offline_result",
+    "file": "C:\\Users\\qtc91\\Deepseeek-Harness工作区\\项目开发\\assets\\audio_demo\\cand_loud_talk_a.wav",
+    "duration_sec": 4.465625,
+    "sample_rate": 16000,
+    "segments": [
+      {
+        "class_index": 3,
+        "class_key": "normal_talk",
+        "class_zh": "正常交谈",
+        "confidence": 0.18249,
+        "top_label_name": "Static",
+        "top_label_prob": 0.269271,
+        "segment_sec": 4.465625
+      }
+    ]
+  },
+  "loud_talk_b": {
+    "type": "offline_result",
+    "file": "C:\\Users\\qtc91\\Deepseeek-Harness工作区\\项目开发\\assets\\audio_demo\\cand_loud_talk_b.wav",
+    "duration_sec": 4.465625,
+    "sample_rate": 16000,
+    "segments": [
+      {
+        "class_index": 3,
+        "class_key": "normal_talk",
+        "class_zh": "正常交谈",
+        "confidence": 0.172784,
+        "top_label_name": "Speech",
+        "top_label_prob": 0.089299,
+        "segment_sec": 4.465625
+      }
+    ]
+  },
+  "loud_talk_c": {
+    "type": "offline_result",
+    "file": "C:\\Users\\qtc91\\Deepseeek-Harness工作区\\项目开发\\assets\\audio_demo\\cand_loud_talk_c.wav",
+    "duration_sec": 4.465625,
+    "sample_rate": 16000,
+    "segments": [
+      {
+        "class_index": 3,
+        "class_key": "normal_talk",
+        "class_zh": "正常交谈",
+        "confidence": 0.13735,
+        "top_label_name": "Speech",
+        "top_label_prob": 0.086683,
+        "segment_sec": 4.465625
+      }
+    ]
+  },
+  "game_audio": {
+    "type": "offline_result",
+    "file": "C:\\Users\\qtc91\\Deepseeek-Harness工作区\\项目开发\\assets\\audio_demo\\cand_game_audio.wav",
+    "duration_sec": 8.0,
+    "sample_rate": 16000,
+    "segments": [
+      {
+        "class_index": 1,
+        "class_key": "music",
+        "class_zh": "乐器声",
+        "confidence": 0.785746,
+        "top_label_name": "Music",
+        "top_label_prob": 0.721447,
+        "segment_sec": 5.0
+      },
+      {
+        "class_index": 1,
+        "class_key": "music",
+        "class_zh": "乐器声",
+        "confidence": 0.752287,
+        "top_label_name": "Music",
+        "top_label_prob": 0.693186,
+        "segment_sec": 3.0
+      }
+    ]
+  }
+}
