@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0f1720" />
+  <title>手语识别</title>
+  <link rel="stylesheet" href="./style.css" />
+  <link rel="stylesheet" href="./recognize.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark"></span>
+      <h1>手语识别</h1>
+      <span class="brand-tag">203 词 · 本地推理</span>
+    </div>
+    <div class="topbar-right">
+      <span id="modelStatus" class="status-pill status-loading">模型加载中…</span>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- 左：画面 -->
+    <section class="panel stage-panel" aria-label="画面区">
+      <div class="video-wrap">
+        <video id="video" playsinline muted autoplay></video>
+        <canvas id="overlay"></canvas>
+        <div id="videoPlaceholder" class="video-placeholder">
+          <div class="ph-icon">▣</div>
+          <p>上传手语视频或开启摄像头</p>
+          <p class="ph-sub">骨架与识别均在本地完成，不会上传</p>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button id="btnStartCam" class="btn btn-primary">开启摄像头</button>
+        <button id="btnStopCam" class="btn">关闭</button>
+        <label class="btn btn-file" for="fileVideo" role="button" tabindex="0">上传视频</label>
+        <input id="fileVideo" type="file" accept="video/*" hidden />
+      </div>
+      <p id="camHint" class="hint" hidden></p>
+      <p class="hint file-hint">提示：上传后自动循环播放并实时识别，画面右上角显示当前帧数。</p>
+    </section>
+
+    <!-- 右：识别结果 -->
+    <section class="right-col">
+      <div class="panel result-panel" aria-label="识别结果区">
+        <div class="panel-title">识别结果</div>
+        <div id="result" class="result result-idle" aria-live="polite">等待输入</div>
+        <div class="result-meta">
+          <span id="handBadge" class="mini-badge">未检测到手</span>
+          <span id="frameBadge" class="mini-badge">0/30 帧</span>
+        </div>
+
+        <div class="topk" id="topkList"></div>
+
+        <details class="diag" id="diagBox">
+          <summary>识别详情</summary>
+          <div id="diag" class="diag-body">—</div>
+        </details>
+      </div>
+
+      <div class="panel hint-panel" aria-label="使用说明">
+        <div class="panel-title">使用说明</div>
+        <ul class="tips">
+          <li>上传一段 <strong>单个手语词</strong> 的视频（约 1–3 秒），或开启摄像头对着手做动作。</li>
+          <li>画面持续提取手部骨架，每凑满 30 帧就用 TCN 模型识别一次，实时更新 Top-5 结果。</li>
+          <li>正面、光线充足、手部完整入镜时效果最好。</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">手语识别 · TCN 时序模型 · 本地推理 · 无后端</footer>
+
+  <script type="module" src="./recognize.mjs"></script>
+</body>
+</html>
