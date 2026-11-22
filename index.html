@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f6fb">
+  <meta name="description" content="在手机或电脑浏览器里体验国家通用手语词识别。">
+  <title>手语译窗 · 国家通用手语识别</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap nav">
+      <a class="brand" href="./"><span class="brand-icon" aria-hidden="true"><i></i><i></i><i></i></span>手语译窗</a>
+      <nav aria-label="站点导航">
+        <button type="button" id="show-vocab">词表</button>
+        <a href="#project">项目</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <header class="intro">
+      <p class="eyebrow">国家通用手语</p>
+      <h1>识别一个手语词</h1>
+      <p>让双肩和双手入镜，倒计时结束后做一次完整动作。</p>
+    </header>
+
+    <section id="demo" class="studio" aria-label="手语识别">
+      <div class="card input-card">
+        <div class="switcher" role="group" aria-label="输入方式">
+          <button type="button" data-mode="camera" aria-pressed="true">摄像头</button>
+          <button type="button" data-mode="video" aria-pressed="false">相册视频</button>
+          <button type="button" data-mode="example" aria-pressed="false">试内置样例</button>
+        </div>
+
+        <div class="stage" id="stage" data-mode="camera">
+          <div class="stage-inner">
+            <img id="poster" alt="公开数据集的手语动作画面" hidden>
+            <video id="camera-view" playsinline muted preload="auto" hidden></video>
+            <canvas id="overlay" width="512" height="512" aria-hidden="true"></canvas>
+            <div id="empty-stage"><span class="focus-mark" aria-hidden="true"></span><p id="empty-text">打开摄像头后取景</p></div>
+          </div>
+          <span class="stage-status" id="stage-status" aria-hidden="true" hidden></span>
+        </div>
+
+        <div class="actions">
+          <button type="button" id="primary-action" class="primary">打开摄像头</button>
+          <button type="button" id="stop-camera" class="secondary" hidden>关闭摄像头</button>
+          <input type="file" id="video-file" accept="video/*" hidden>
+        </div>
+        <div id="example-list" class="examples" role="group" aria-label="选择样例" hidden></div>
+        <p id="hint" class="hint" role="status">相机画面在浏览器内处理。</p>
+        <noscript><p class="hint">请开启浏览器的 JavaScript 后刷新。</p></noscript>
+      </div>
+
+      <div class="result card">
+        <div class="card-head">
+          <h2>识别结果</h2>
+          <span class="status" id="model-status" data-ready="false">等待输入</span>
+        </div>
+        <div id="result-body" aria-live="polite">
+          <div class="first-result">
+            <span>首选词</span>
+            <strong id="result-word">—</strong>
+            <p id="result-detail">完成一个动作后，结果会显示在这里。</p>
+          </div>
+          <div class="candidates">
+            <h3>其他候选</h3>
+            <ol id="candidate-list" start="2"><li class="blank">等待第一次识别</li></ol>
+          </div>
+        </div>
+        <details class="record">
+          <summary>文字记录</summary>
+          <p id="transcript">选中的词会添加到这里。</p>
+          <div class="record-controls">
+            <button type="button" class="secondary" id="append-word" disabled>添加首选词</button>
+            <button type="button" class="secondary" id="clear-record" disabled>清空</button>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section id="project" class="project" aria-labelledby="metrics-title">
+      <div>
+        <h2 id="metrics-title">数据集测试</h2>
+        <p>按手语者划分训练与测试。手机现场表现待单独测量。</p>
+      </div>
+      <dl>
+        <div><dt>词表规模</dt><dd>203<span> 词</span></dd></div>
+        <div><dt>跨人测试样本</dt><dd>609<span> 条</span></dd></div>
+        <div><dt>首选命中率</dt><dd id="test-top1">63.38<span>%</span></dd></div>
+        <div><dt>前五命中率</dt><dd id="test-top5">82.76<span>%</span></dd></div>
+      </dl>
+    </section>
+  </main>
+
+  <footer class="wrap foot">
+    <span>东南大学 · 人工智能通识导论课程作品</span>
+    <a href="https://doi.org/10.6084/m9.figshare.27261843.v3">NationalCSL-DP 数据与署名</a>
+  </footer>
+
+  <dialog id="vocab-dialog" aria-labelledby="vocab-title">
+    <div class="dialog-head">
+      <h2 id="vocab-title">203 词词表</h2>
+      <button type="button" class="secondary" id="close-vocab" aria-label="关闭词表">关闭</button>
+    </div>
+    <label for="word-filter">搜索中文词或数字</label>
+    <input id="word-filter" type="search" placeholder="例如 跑">
+    <ul id="word-list"></ul>
+    <p id="word-count" role="status"></p>
+  </dialog>
+  <script type="module" src="app.mjs"></script>
+</body>
+</html>
