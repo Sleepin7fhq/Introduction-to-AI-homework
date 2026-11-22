@@ -1,0 +1,1 @@
+{"type":"client-request","rpcId":"d6b","method":"session/rename","payload":{"args":{"request":{"sessionId":"session-0b2ae607-20ba-4e9f-b2e2-6ed06cdda649","title":"alice tries to rename"}}}}

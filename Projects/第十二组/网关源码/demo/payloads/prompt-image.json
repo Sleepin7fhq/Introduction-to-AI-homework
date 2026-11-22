@@ -1,0 +1,1 @@
+{"type":"client-request","rpcId":"d6","method":"session/prompt","payload":{"args":{"request":{"sessionId":"session-0b2ae607-20ba-4e9f-b2e2-6ed06cdda649","mode":"queue","requestId":"demo-g1","clientTimeZone":"Asia/Shanghai","content":[{"type":"image","mediaType":"image/png","data":"AAAA"}]}}}}
