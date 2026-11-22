@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>一心净土 · 梦见月瑞习</title>
+<link rel="icon" href="mizuki-128.png">
+<style>
+:root{
+  --bg:#F6F2FB; --card:#FFFFFF; --ink:#2C2438; --muted:#7B7189;
+  --line:#E8E0F2; --green:#6B4FA3; --green-soft:#EFE9F9;
+  --amber:#B9803F; --amber-soft:#FBF2E6; --red:#B5486A; --red-soft:#FBECF1;
+  --radius:18px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",sans-serif;
+  font-size:16px;line-height:1.7;
+  background-image:radial-gradient(circle at 12% 8%,#FBF7FF 0,transparent 45%),
+                   radial-gradient(circle at 88% 92%,#F5EEFB 0,transparent 45%);
+}
+.wrap{max-width:980px;margin:0 auto;padding:24px 20px 56px}
+
+header.top{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.logo{width:44px;height:44px;border-radius:14px;background:var(--green);display:grid;place-items:center;font-size:22px;flex:none}
+.logo-img{background:url("isshin.jpg") center/cover;color:transparent;overflow:hidden}
+.brand h1{margin:0;font-size:19px;letter-spacing:.5px;font-weight:650}
+.brand p{margin:2px 0 0;font-size:12.5px;color:var(--muted)}
+.spacer{flex:1}
+.me{font-size:13px;color:var(--muted);text-align:right;white-space:nowrap}
+.back{font-size:12.5px;color:var(--muted);text-decoration:none;border:1px solid var(--line);padding:4px 11px;border-radius:999px;background:#fff;white-space:nowrap}
+.back:hover{color:var(--green);border-color:var(--green)}
+
+.tabs{display:flex;gap:4px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:4px;margin-bottom:18px;overflow:auto}
+.tabs button{
+  flex:1;min-width:64px;border:none;background:transparent;color:var(--muted);
+  font-family:inherit;font-size:14px;padding:8px 10px;border-radius:10px;cursor:pointer;white-space:nowrap;
+}
+.tabs button.on{background:var(--green);color:#fff;font-weight:600}
+
+.tab{display:none}
+.tab.on{display:block}
+
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:20px;margin-bottom:14px;box-shadow:0 1px 2px rgba(0,0,0,.03),0 10px 26px rgba(76,60,110,.04);
+}
+.card h2{margin:0 0 12px;font-size:15px;font-weight:650;letter-spacing:.3px}
+.muted{color:var(--muted)}
+.small{font-size:12.5px}
+.hint{margin:10px 0 0;font-size:13px;color:var(--muted)}
+.empty{margin:6px 0;color:var(--muted);font-size:13.5px}
+
+/* ---------- 计时器 ---------- */
+.timer{text-align:center;padding:26px 20px 22px}
+.phase-row{display:flex;align-items:center;justify-content:center;gap:10px;font-size:13px;color:var(--muted)}
+.pill{background:var(--green-soft);color:var(--green);padding:3px 12px;border-radius:999px;font-weight:600}
+.clock{font-size:72px;line-height:1.1;font-weight:650;color:var(--green);letter-spacing:2px;font-variant-numeric:tabular-nums;margin:12px 0 10px}
+.bar{height:6px;background:#EDE6F7;border-radius:999px;overflow:hidden;max-width:460px;margin:0 auto}
+.bar i{display:block;height:100%;width:0;background:var(--green);border-radius:999px;transition:width .3s linear}
+.btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+.btn{
+  border:1px solid transparent;border-radius:12px;padding:9px 18px;font-size:14px;cursor:pointer;
+  font-family:inherit;font-weight:550;transition:.16s;white-space:nowrap;background:#fff;color:var(--ink);
+}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:var(--green);color:#fff;box-shadow:0 6px 16px rgba(107,79,163,.2)}
+.btn.primary:hover:not(:disabled){background:#573E88}
+.btn.ghost{background:transparent;color:var(--muted);border-color:var(--line)}
+.btn.ghost:hover:not(:disabled){color:var(--ink);border-color:#CFC4E2}
+.btn.danger{color:var(--red);border-color:#EBCFDC}
+.btn.small{padding:6px 12px;font-size:12.5px;border-radius:10px}
+
+.row-between{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.field{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+select,input[type="text"],input[type="number"]{
+  font-family:inherit;font-size:14px;color:var(--ink);background:#fff;
+  border:1px solid var(--line);border-radius:10px;padding:7px 10px;outline:none;
+}
+select:focus,input:focus{border-color:var(--green)}
+select:disabled,input:disabled{background:#F6F1FC;color:var(--muted)}
+
+.noise-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px dashed var(--line)}
+.noise-title{font-size:14px;color:var(--muted)}
+input[type="range"]{accent-color:var(--green);width:130px}
+
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.stat-v{font-size:21px;font-weight:650;color:var(--green);font-variant-numeric:tabular-nums}
+.stat-l{font-size:12.5px;color:var(--muted);margin-top:2px}
+.stat-s{font-size:11.5px;color:#A69BB8;margin-top:2px}
+
+/* ---------- 任务 ---------- */
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row input[type="text"]{flex:1;min-width:180px}
+.row input[type="number"]{width:96px}
+.list{margin-top:4px}
+.task-row{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:11px 0;border-bottom:1px solid #F2ECFA;flex-wrap:wrap}
+.task-row:last-child{border-bottom:none}
+.task-name{font-weight:600;font-size:14.5px;word-break:break-all}
+.task-meta{font-size:12.5px;color:var(--muted);margin-top:2px}
+.task-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.badge{font-size:11.5px;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.badge.todo{background:#F2ECFA;color:#8B8199}
+.badge.doing{background:var(--amber-soft);color:var(--amber)}
+.badge.done{background:var(--green-soft);color:var(--green)}
+
+/* ---------- 报告 ---------- */
+.seg{display:inline-flex;background:#fff;border:1px solid var(--line);border-radius:11px;padding:3px}
+.seg button{border:none;background:transparent;color:var(--muted);font-family:inherit;font-size:13px;padding:5px 14px;border-radius:8px;cursor:pointer}
+.seg button.on{background:var(--green);color:#fff;font-weight:600}
+.minuteline{font-size:12.5px;color:var(--muted);margin:-2px 0 14px;padding-left:2px}
+.score-card{display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap}
+.score-left{min-width:120px;text-align:center}
+.score{font-size:52px;font-weight:700;color:var(--green);line-height:1.1;font-variant-numeric:tabular-nums}
+.score-right{flex:1;min-width:240px}
+.score-item{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;padding:4px 0;border-bottom:1px dashed #F2ECFA}
+.score-item:last-child{border-bottom:none}
+.score-item .pts{color:var(--muted);white-space:nowrap}
+.formula{font-size:12px;color:var(--muted);margin:10px 0 0;line-height:1.8}
+.bars{display:flex;gap:8px;align-items:flex-end;height:150px;padding-top:6px}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end}
+.bar-wrap{width:100%;max-width:44px;height:110px;display:flex;align-items:flex-end}
+.bar-wrap i{display:block;width:100%;background:#D9CBEF;border-radius:7px 7px 0 0;min-height:2px}
+.bar-col.today .bar-wrap i{background:var(--green)}
+.bar-col .wd{font-size:11.5px;color:var(--muted)}
+.bar-col .val{font-size:10.5px;color:#A69BB8;font-variant-numeric:tabular-nums}
+.dist-row,.inv-row{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;padding:7px 0;border-bottom:1px solid #F4EEFB}
+.dist-row:last-child,.inv-row:last-child{border-bottom:none}
+.summary{background:var(--green-soft);border-color:#DCD0EF;font-size:14px;line-height:1.9;color:#3B2E55}
+
+/* ---------- 设置 ---------- */
+.set-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:11px 0;border-bottom:1px solid #F4EEFB;flex-wrap:wrap}
+.set-row:last-child{border-bottom:none}
+.set-label{font-size:14px}
+.set-desc{font-size:12px;color:var(--muted);margin-top:2px}
+.set-actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+
+/* ---------- 弹层 ---------- */
+.modal{position:fixed;inset:0;background:rgba(31,29,26,.42);display:flex;align-items:center;justify-content:center;padding:18px;z-index:60}
+.modal.hidden{display:none}
+.modal-card{background:#fff;border-radius:18px;padding:22px;max-width:420px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.18)}
+.modal-card h3{margin:0 0 4px;font-size:16px}
+.reasons{display:flex;flex-direction:column;gap:9px;margin:14px 0 18px}
+.reasons label{display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px}
+.toast{
+  position:fixed;left:50%;bottom:30px;transform:translateX(-50%) translateY(16px);
+  background:var(--ink);color:#fff;padding:10px 20px;border-radius:12px;font-size:13.5px;
+  opacity:0;pointer-events:none;transition:.24s;z-index:80;max-width:88vw;text-align:center;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.hidden{display:none!important}
+.foot{text-align:center;color:#A99FBA;font-size:11.5px;margin-top:26px}
+
+@media (max-width:680px){
+  .clock{font-size:58px}
+  .grid4{grid-template-columns:repeat(2,1fr)}
+  .score-left{width:100%}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="logo logo-img"></div>
+    <div class="brand">
+      <h1>一心净土</h1>
+      <p>梦见月瑞习 · 计时 → 任务 → 专注质量报告</p>
+    </div>
+    <div class="spacer"></div>
+    <div class="me"><span id="dateTop"></span></div>
+    <a class="back" href="index.html">← 返回</a>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button data-tab="focus" class="on">专注</button>
+    <button data-tab="tasks">任务</button>
+    <button data-tab="report">报告</button>
+    <button data-tab="settings">设置</button>
+  </nav>
+
+  <main>
+    <!-- ================= 专注 ================= -->
+    <section id="tab-focus" class="tab on">
+      <div class="card timer">
+        <div class="phase-row">
+          <span class="pill" id="phaseLabel">专注</span>
+          <span class="muted" id="boundLabel">未绑定任务</span>
+        </div>
+        <div class="clock" id="clock">25:00</div>
+        <div class="bar"><i id="progress"></i></div>
+        <div class="btns">
+          <button id="btnStart" class="btn primary">开始</button>
+          <button id="btnPause" class="btn ghost hidden">暂停</button>
+          <button id="btnResume" class="btn ghost hidden">继续</button>
+          <button id="btnEnd" class="btn ghost hidden">结束</button>
+          <button id="btnGiveUp" class="btn ghost danger hidden">放弃</button>
+          <button id="btnBreak" class="btn primary hidden">开始休息</button>
+          <button id="btnSkipBreak" class="btn ghost hidden">跳过休息</button>
+        </div>
+        <p class="hint" id="timerHint">开始前可以先绑定一个任务；不绑定也能开始。</p>
+      </div>
+
+      <div class="card">
+        <div class="row-between">
+          <label class="field">绑定任务
+            <select id="taskSelect"><option value="">不绑定任务</option></select>
+          </label>
+          <button id="btnDistract" class="btn ghost small" disabled>记一次分心</button>
+        </div>
+        <div class="noise-row">
+          <span class="noise-title">背景音</span>
+          <select id="noiseType">
+            <option value="brown">棕噪音</option>
+            <option value="fan">风扇声</option>
+          </select>
+          <button id="noiseToggle" class="btn ghost small">播放</button>
+          <input type="range" id="noiseVol" min="0" max="100" step="1" value="50" aria-label="背景音音量">
+          <span class="muted small" id="noiseVolText">50%</span>
+        </div>
+        <p class="hint small">棕噪音与风扇声由浏览器 Web Audio 实时合成，不加载外部音频；播放失败不影响计时和统计。</p>
+      </div>
+
+      <div class="grid4" id="focusStats"></div>
+    </section>
+
+    <!-- ================= 任务 ================= -->
+    <section id="tab-tasks" class="tab">
+      <div class="card">
+        <h2>新建任务</h2>
+        <div class="row">
+          <input type="text" id="taskName" maxlength="40" placeholder="任务名，例如：线代第三章">
+          <input type="number" id="taskPlanned" min="1" max="20" value="4" aria-label="预计番茄数">
+          <button id="taskAdd" class="btn primary">新建</button>
+        </div>
+        <p class="hint small">预计番茄数只是计划值；任务状态由你手动标记完成，绑定时会自动从「未开始」变为「进行中」。</p>
+      </div>
+      <div class="card">
+        <h2>任务列表</h2>
+        <div id="taskList" class="list"></div>
+      </div>
+    </section>
+
+    <!-- ================= 报告 ================= -->
+    <section id="tab-report" class="tab">
+      <div class="row-between" style="margin-bottom:12px">
+        <div class="seg" id="reportSeg">
+          <button data-scope="today" class="on">今日</button>
+          <button data-scope="week">本周</button>
+        </div>
+        <span class="muted small" id="scopeNote"></span>
+      </div>
+
+      <div class="grid4" id="reportStats"></div>
+      <p class="minuteline" id="minuteline"></p>
+
+      <div class="card score-card">
+        <div class="score-left">
+          <div class="score" id="scoreNum">—</div>
+          <div class="muted small">专注质量评分</div>
+        </div>
+        <div class="score-right">
+          <div id="scoreItems"></div>
+          <p class="formula">
+            评分 = 55% × 有效专注率 + 25% × 分心控制率 + 20% × 任务完成率<br>
+            无任务数据时剔除任务项，按 55 : 25 归一化（满分仍为 100）；有效专注率上限为 1。
+          </p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>本周每日有效专注（分钟）</h2>
+        <div class="bars" id="weekBars"></div>
+      </div>
+
+      <div class="card">
+        <h2>分心分布</h2>
+        <div id="distractList" class="list"></div>
+      </div>
+
+      <div class="card">
+        <h2>任务投入</h2>
+        <div id="taskInvest" class="list"></div>
+      </div>
+
+      <div class="card summary" id="summary"></div>
+    </section>
+
+    <!-- ================= 设置 ================= -->
+    <section id="tab-settings" class="tab">
+      <div class="card">
+        <h2>计时设置</h2>
+        <div class="set-row">
+          <div><div class="set-label">专注时长（分钟）</div><div class="set-desc">1–120，下一次开始生效</div></div>
+          <input type="number" id="setFocus" min="1" max="120" value="25">
+        </div>
+        <div class="set-row">
+          <div><div class="set-label">休息时长（分钟）</div><div class="set-desc">1–60，完成番茄后可选开始</div></div>
+          <input type="number" id="setBreak" min="1" max="60" value="5">
+        </div>
+        <div class="set-row">
+          <div><div class="set-label">分心判定阈值</div><div class="set-desc">页面隐藏超过 5 秒记 1 次分心；超过 2 分钟自动暂停</div></div>
+          <span class="muted small">固定 5 秒（只读）</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>背景音</h2>
+        <div class="set-row">
+          <div><div class="set-label">默认音量</div><div class="set-desc">0–100，仅影响本机播放</div></div>
+          <div class="row" style="gap:8px">
+            <input type="range" id="setVol" min="0" max="100" step="1" value="50">
+            <span class="muted small" id="setVolText">50%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>数据</h2>
+        <div class="set-row">
+          <div><div class="set-label">清空本地数据</div><div class="set-desc">删除本模块的任务、会话记录与设置，需二次确认</div></div>
+          <button id="clearData" class="btn ghost danger small">清空数据</button>
+        </div>
+      </div>
+
+      <div class="set-actions">
+        <button id="saveSettings" class="btn primary">保存设置</button>
+      </div>
+      <p class="hint small">所有数据只保存在本机浏览器 localStorage，不发送到任何服务器。</p>
+    </section>
+  </main>
+
+  <p class="foot">一心净土 · 单文件 MVP · 数据只在本机</p>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- 提前结束原因 -->
+<div class="modal hidden" id="reasonModal">
+  <div class="modal-card">
+    <h3>提前结束这次专注</h3>
+    <p class="muted small">选一个原因。原因只写在你自己本机的记录里，不公开、不统计到别处。</p>
+    <div class="reasons" id="reasonOptions">
+      <label><input type="radio" name="reason" value="任务完成"> 任务完成</label>
+      <label><input type="radio" name="reason" value="临时有事"> 临时有事</label>
+      <label><input type="radio" name="reason" value="不想学了"> 不想学了</label>
+      <label><input type="radio" name="reason" value="其他"> 其他</label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="reasonCancel">取消</button>
+      <button class="btn primary" id="reasonOk">确认结束</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* =========================================================
+     指标口径（与报告页文案一致，改公式请同步改这里和页面说明）
+     1. 有效专注分钟 = 所有会话中「计时运行中 + 页面可见 + 未暂停」的秒数 / 60
+     2. 分心次数 = 页面隐藏/失焦持续超过 5 秒的次数 + 手动标记分心次数；
+        暂停期间切屏不计，主动结束不计
+     3. 有效专注率 = 有效专注分钟 / max(计划专注分钟, 1)，上限 1
+     4. 分心控制率 = max(0, 1 - 分心次数 / 10)，即 10 次分心该项为 0
+     5. 任务完成率 = 当日绑定过番茄且已标记完成的任务数 / 当日绑定过番茄的任务数；
+        无绑定任务时显示「无任务数据」，评分剔除任务项
+     6. 专注质量评分 = 55% × 有效专注率 + 25% × 分心控制率 + 20% × 任务完成率；
+        无任务时按 55 : 25 重新归一化到 100 分制
+     7. 番茄完成率 = 完成番茄数 / 开始番茄数；放弃/提前结束不计完成，
+        但其中的有效专注仍计入当日有效专注
+     8. 日期归属：按会话开始日期计入本地日期；跨天会话按开始日期统计
+     ========================================================= */
+
+  /* ---------------- 小工具 ---------------- */
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  function clamp(v, a, b) { return Math.min(b, Math.max(a, v)); }
+  function clampInt(v, a, b, dflt) {
+    var n = parseInt(v, 10);
+    if (!isFinite(n)) n = dflt;
+    return clamp(n, a, b);
+  }
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function fmt(sec) {
+    sec = Math.max(0, Math.ceil(sec));
+    return pad2(Math.floor(sec / 60)) + ':' + pad2(sec % 60);
+  }
+  function formatMin(m) {
+    var r = Math.round(m * 10) / 10;
+    return (r % 1 === 0) ? String(r) : r.toFixed(1);
+  }
+  function uid() {
+    try {
+      if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    } catch (e) {}
+    return 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+  }
+  function dayKey(ts) {
+    var d = new Date(ts);
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  }
+  function startOfWeek(ts) {
+    var d = new Date(ts);
+    var w = (d.getDay() + 6) % 7;               // 周一 = 0
+    d.setDate(d.getDate() - w);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  }
+  var toastTimer = null;
+  function toast(msg) {
+    var t = $('#toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2200);
+  }
+
+  /* ---------------- 本地存储 ---------------- */
+  var KEY = {
+    sessions: 'pomo.sessions.v1',
+    tasks: 'pomo.tasks.v1',
+    settings: 'pomo.settings.v1',
+    noise: 'pomo.noise.v1'
+  };
+  function load(key, fallback) {
+    try {
+      var raw = localStorage.getItem(key);
+      if (!raw) return fallback;
+      var v = JSON.parse(raw);
+      return (v == null) ? fallback : v;
+    } catch (e) { return fallback; }
+  }
+  function save(key, val) {
+    try {
+      localStorage.setItem(key, JSON.stringify(val));
+    } catch (e) {
+      toast('本地存储不可用，数据可能不会被保存');
+    }
+  }
+
+  var sessions = load(KEY.sessions, []);
+  if (!Array.isArray(sessions)) sessions = [];
+  var tasks = load(KEY.tasks, []);
+  if (!Array.isArray(tasks)) tasks = [];
+  var settings = Object.assign({ focusMin: 25, breakMin: 5 }, load(KEY.settings, {}));
+  settings.focusMin = clampInt(settings.focusMin, 1, 120, 25);
+  settings.breakMin = clampInt(settings.breakMin, 1, 60, 5);
+  var noiseCfg = Object.assign({ type: 'brown', volume: 0.5 }, load(KEY.noise, {}));
+  if (['brown', 'fan'].indexOf(noiseCfg.type) < 0) noiseCfg.type = 'brown';
+  noiseCfg.volume = clamp(Number(noiseCfg.volume) || 0, 0, 1);
+
+  function saveSessions() { save(KEY.sessions, sessions); }
+  function saveTasks() { save(KEY.tasks, tasks); }
+  function saveSettings() { save(KEY.settings, settings); }
+  function saveNoise() { save(KEY.noise, noiseCfg); }
+
+  // 迁移：昵称 / 排行榜已移除，清掉可能残留的旧键
+  try { localStorage.removeItem('pomo.nickname.v1'); } catch (e) {}
+
+  /* ---------------- 计时状态 ---------------- */
+  // phase: focus | break ; state: idle | running | paused | done
+  var T = {
+    phase: 'focus',
+    state: 'idle',
+    remain: settings.focusMin * 60,
+    planned: settings.focusMin * 60,
+    eff: 0,              // 有效专注秒
+    paused: 0,           // 暂停秒
+    startedAt: null,
+    taskId: null,
+    distractions: [],    // 分心时间戳
+    lastTick: 0,
+    pauseAt: 0,
+    endStatus: 'abandoned'
+  };
+
+  function resetTimer() {
+    T.phase = 'focus';
+    T.state = 'idle';
+    T.planned = settings.focusMin * 60;
+    T.remain = T.planned;
+    T.eff = 0;
+    T.paused = 0;
+    T.startedAt = null;
+    T.taskId = null;
+    T.distractions = [];
+    T.lastTick = 0;
+    T.pauseAt = 0;
+  }
+
+  function syncTick() {
+    if (T.state !== 'running' || document.hidden) return;
+    var now = Date.now();
+    var dt = clamp((now - T.lastTick) / 1000, 0, 1.5);
+    T.lastTick = now;
+    T.remain = Math.max(0, T.remain - dt);
+    if (T.phase === 'focus') T.eff += dt;
+  }
+
+  function makeRecord(status, reason) {
+    return {
+      id: uid(),
+      startedAt: T.startedAt || Date.now(),
+      endedAt: Date.now(),
+      plannedSec: Math.round(T.planned),
+      focusSec: Math.round(T.eff),
+      pausedSec: Math.round(T.paused),
+      status: status,                    // completed | ended | abandoned
+      reason: reason || null,
+      taskId: T.taskId || null,
+      distractions: T.distractions.slice()
+    };
+  }
+
+  function startFocus() {
+    if (T.state !== 'idle' || T.phase !== 'focus') return;
+    T.state = 'running';
+    T.startedAt = Date.now();
+    T.planned = settings.focusMin * 60;
+    T.remain = T.planned;
+    T.eff = 0;
+    T.paused = 0;
+    T.distractions = [];
+    T.lastTick = Date.now();
+    T.pauseAt = 0;
+    var sel = $('#taskSelect');
+    T.taskId = (sel && sel.value) ? sel.value : null;
+    if (T.taskId) {
+      var t = tasks.find(function (x) { return x.id === T.taskId; });
+      if (t && t.status === 'todo') {
+        t.status = 'doing';
+        saveTasks();
+      }
+    }
+    renderAll();
+  }
+
+  function pauseTimer(atTs) {
+    if (T.state !== 'running') return;
+    syncTick();
+    T.state = 'paused';
+    T.pauseAt = atTs || Date.now();
+    renderAll();
+  }
+
+  function resumeTimer() {
+    if (T.state !== 'paused') return;
+    T.paused += (Date.now() - T.pauseAt) / 1000;
+    T.pauseAt = 0;
+    T.state = 'running';
+    T.lastTick = Date.now();
+    renderAll();
+  }
+
+  function completeFocus() {
+    if (T.state !== 'running' || T.phase !== 'focus') return;
+    syncTick();
+    var rec = makeRecord('completed', null);
+    sessions.push(rec);
+    saveSessions();
+    T.state = 'done';
+    T.remain = 0;
+    T.pauseAt = 0;
+    renderAll();
+    toast('番茄完成，休息一下？');
+  }
+
+  function finishEarly(status, reason) {
+    if (T.state !== 'running' && T.state !== 'paused') return;
+    if (T.state === 'paused' && T.pauseAt) {
+      T.paused += (Date.now() - T.pauseAt) / 1000;
+      T.pauseAt = 0;
+    } else {
+      syncTick();
+    }
+    var rec = makeRecord(status, reason);
+    sessions.push(rec);
+    saveSessions();
+    resetTimer();
+    renderAll();
+    toast('已结束本次专注，有效时长已记录');
+  }
+
+  function startBreak() {
+    T.phase = 'break';
+    T.state = 'running';
+    T.planned = settings.breakMin * 60;
+    T.remain = T.planned;
+    T.lastTick = Date.now();
+    T.pauseAt = 0;
+    renderAll();
+  }
+
+  function endBreak() {
+    resetTimer();
+    renderAll();
+    toast('休息结束，准备下一个番茄');
+  }
+
+  function skipBreak() {
+    if (T.phase !== 'break') return;
+    endBreak();
+  }
+
+  // 每秒推进。页面隐藏时不推进，回到页面时由 visibilitychange 统一结算。
+  setInterval(function () {
+    if (T.state !== 'running' || document.hidden) return;
+    var now = Date.now();
+    var dt = clamp((now - T.lastTick) / 1000, 0, 1.5);
+    T.lastTick = now;
+    T.remain = Math.max(0, T.remain - dt);
+    if (T.phase === 'focus') T.eff += dt;
+    if (T.remain <= 0) {
+      T.remain = 0;
+      if (T.phase === 'focus') completeFocus();
+      else endBreak();
+      return;
+    }
+    renderTimer();
+  }, 1000);
+
+  /* ---------------- 页面可见性 / 分心 ---------------- */
+  var hiddenAt = 0;
+  var hiddenWasRunning = false;
+
+  document.addEventListener('visibilitychange', function () {
+    var now = Date.now();
+    if (document.hidden) {
+      hiddenAt = now;
+      hiddenWasRunning = (T.state === 'running');
+      return;
+    }
+    if (!hiddenAt) return;
+    var dur = now - hiddenAt;
+    var at = hiddenAt;
+    hiddenAt = 0;
+    if (!hiddenWasRunning || T.state !== 'running') return;
+
+    if (T.phase === 'break') {
+      // 休息期间不统计分心，正常扣时
+      T.remain = Math.max(0, T.remain - dur / 1000);
+      if (T.remain <= 0) { endBreak(); return; }
+      T.lastTick = now;
+      renderAll();
+      return;
+    }
+
+    T.lastTick = now;
+    // 离开超过 2 分钟按 2 分钟计，之后自动暂停
+    var consumeSec = Math.min(dur, 120000) / 1000;
+    T.remain = Math.max(0, T.remain - consumeSec);
+    if (dur > 5000) T.distractions.push(at);   // 一次离开只记 1 次分心
+
+    if (T.remain <= 0) {
+      T.remain = 0;
+      completeFocus();
+      return;
+    }
+    if (dur > 120000) {
+      T.state = 'paused';
+      T.pauseAt = at + 120000;
+      toast('离开超过 2 分钟，已自动暂停');
+    }
+    renderAll();
+  });
+
+  /* ---------------- 背景音（Web Audio 合成） ---------------- */
+  var audioCtx = null, noiseSrc = null, noiseGain = null, noisePlaying = false;
+
+  function volumeGain() { return noiseCfg.volume * 0.3; }
+
+  function ensureCtx() {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) throw new Error('no AudioContext');
+    if (!audioCtx) audioCtx = new AC();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+
+  function makeBuffer(ctx, type) {
+    var len = Math.floor(ctx.sampleRate * 2);
+    var buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    var d = buf.getChannelData(0);
+    var i, w, last = 0;
+    if (type === 'brown') {
+      for (i = 0; i < len; i++) {
+        w = Math.random() * 2 - 1;
+        last = (last + 0.02 * w) / 1.02;
+        d[i] = last * 3.5;
+      }
+    } else {
+      // 风扇声：用白噪声做滤波源（不对外提供白噪音选项）
+      for (i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    }
+    return buf;
+  }
+
+  function stopNoise() {
+    try { if (noiseSrc) { noiseSrc.stop(); noiseSrc.disconnect(); } } catch (e) {}
+    try { if (noiseGain) noiseGain.disconnect(); } catch (e) {}
+    noiseSrc = null;
+    noiseGain = null;
+    noisePlaying = false;
+  }
+
+  function startNoise() {
+    try {
+      var ctx = ensureCtx();
+      stopNoise();
+      noiseSrc = ctx.createBufferSource();
+      noiseSrc.buffer = makeBuffer(ctx, noiseCfg.type);
+      noiseSrc.loop = true;
+      noiseGain = ctx.createGain();
+      noiseGain.gain.value = volumeGain();
+      var node = noiseSrc;
+      if (noiseCfg.type === 'fan') {
+        var hp = ctx.createBiquadFilter();
+        hp.type = 'highpass'; hp.frequency.value = 90;
+        var lp = ctx.createBiquadFilter();
+        lp.type = 'lowpass'; lp.frequency.value = 700; lp.Q.value = 0.6;
+        node.connect(hp); hp.connect(lp); node = lp;
+      }
+      node.connect(noiseGain);
+      noiseGain.connect(ctx.destination);
+      noiseSrc.start(0);
+      noisePlaying = true;
+    } catch (e) {
+      noisePlaying = false;
+      toast('音频不可用，计时和统计不受影响');
+    }
+    updateNoiseUI();
+  }
+
+  function toggleNoise() {
+    if (noisePlaying) { stopNoise(); updateNoiseUI(); }
+    else startNoise();
+  }
+
+  function updateNoiseUI() {
+    var b = $('#noiseToggle');
+    if (b) b.textContent = noisePlaying ? '暂停' : '播放';
+    var t = $('#noiseType');
+    if (t) t.value = noiseCfg.type;
+    var v = $('#noiseVol');
+    if (v) v.value = Math.round(noiseCfg.volume * 100);
+    var vt = $('#noiseVolText');
+    if (vt) vt.textContent = Math.round(noiseCfg.volume * 100) + '%';
+  }
+
+  /* ---------------- 统计口径实现 ---------------- */
+  function sessionsToday() {
+    var k = dayKey(Date.now());
+    return sessions.filter(function (s) { return s && s.startedAt && dayKey(s.startedAt) === k; });
+  }
+  function sessionsWeek() {
+    var st = startOfWeek(Date.now());
+    var en = st + 7 * 86400000;
+    return sessions.filter(function (s) { return s && s.startedAt >= st && s.startedAt < en; });
+  }
+
+  // 计划/有效/暂停/放弃分钟 + 完成数 + 分心数 + 任务完成率
+  function calcStats(list) {
+    var plannedSec = 0, effSec = 0, pausedSec = 0, abandonSec = 0, distract = 0, completed = 0;
+    list.forEach(function (s) {
+      plannedSec += s.plannedSec || 0;
+      effSec += s.focusSec || 0;
+      pausedSec += s.pausedSec || 0;
+      if (s.status !== 'completed') abandonSec += s.focusSec || 0;
+      if (s.status === 'completed') completed++;
+      distract += (s.distractions || []).length;
+    });
+    var boundIds = [];
+    list.forEach(function (s) {
+      if (s.taskId && boundIds.indexOf(s.taskId) < 0) boundIds.push(s.taskId);
+    });
+    // 已删除的任务无法再被标记完成，不计入分母
+    boundIds = boundIds.filter(function (id) {
+      return tasks.some(function (t) { return t.id === id; });
+    });
+    var taskDone = boundIds.filter(function (id) {
+      var t = tasks.find(function (x) { return x.id === id; });
+      return t && t.status === 'done';
+    }).length;
+
+    return {
+      plannedMin: plannedSec / 60,
+      effMin: effSec / 60,
+      pausedMin: pausedSec / 60,
+      abandonMin: abandonSec / 60,
+      completed: completed,
+      started: list.length,
+      distract: distract,
+      taskRate: boundIds.length ? taskDone / boundIds.length : null,
+      taskTotal: boundIds.length,
+      taskDone: taskDone
+    };
+  }
+
+  function pct(x) { return Math.round(x * 100) + '%'; }
+
+  // 评分分项：有效专注率(55) + 分心控制率(25) + 任务完成率(20)
+  function scoreParts(st) {
+    var e = clamp(st.effMin / Math.max(st.plannedMin, 1), 0, 1);
+    var d = Math.max(0, 1 - st.distract / 10);
+    if (st.taskRate == null) {
+      return {
+        e: e, d: d, t: null,
+        eMax: 68.75, dMax: 31.25, tMax: 0,
+        total: Math.round((55 * e + 25 * d) / 80 * 100)
+      };
+    }
+    return {
+      e: e, d: d, t: st.taskRate,
+      eMax: 55, dMax: 25, tMax: 20,
+      total: Math.round(55 * e + 25 * d + 20 * st.taskRate)
+    };
+  }
+
+  function peakOf(list) {
+    var map = {};
+    list.forEach(function (s) {
+      (s.distractions || []).forEach(function (ts) {
+        var h = new Date(ts).getHours();
+        map[h] = (map[h] || 0) + 1;
+      });
+    });
+    var hours = Object.keys(map).map(Number);
+    if (!hours.length) return null;
+    hours.sort(function (a, b) { return (map[b] - map[a]) || (a - b); });
+    return { hour: hours[0], count: map[hours[0]] };
+  }
+
+  /* ---------------- 渲染：顶部 ---------------- */
+  function renderHeader() {
+    var d = new Date();
+    var wd = ['日', '一', '二', '三', '四', '五', '六'][d.getDay()];
+    $('#dateTop').textContent = (d.getMonth() + 1) + '月' + d.getDate() + '日 · 周' + wd;
+  }
+
+  /* ---------------- 渲染：专注 ---------------- */
+  function taskName(id) {
+    if (!id) return '未绑定任务';
+    var t = tasks.find(function (x) { return x.id === id; });
+    return t ? t.name : '已删除的任务';
+  }
+
+  function renderTimer() {
+    $('#clock').textContent = fmt(T.remain);
+    var p = T.planned > 0 ? clamp(1 - T.remain / T.planned, 0, 1) : 0;
+    $('#progress').style.width = (p * 100).toFixed(1) + '%';
+    var label = '专注';
+    if (T.phase === 'break') label = '休息';
+    else if (T.state === 'done') label = '已完成';
+    else if (T.state === 'paused') label = '已暂停';
+    $('#phaseLabel').textContent = label;
+  }
+
+  function renderFocus() {
+    if (T.state === 'idle' && T.phase === 'focus') {
+      T.planned = settings.focusMin * 60;
+      T.remain = T.planned;
+    }
+    renderTimer();
+
+    var running = T.state === 'running';
+    var paused = T.state === 'paused';
+    var done = T.state === 'done';
+    var breaking = T.phase === 'break';
+
+    var canFinish = (running || paused) && !breaking;
+    $('#btnStart').classList.toggle('hidden', !(T.state === 'idle' && T.phase === 'focus'));
+    $('#btnPause').classList.toggle('hidden', !(running && !breaking));
+    $('#btnResume').classList.toggle('hidden', !paused);
+    // 提前结束（ended）与放弃（abandoned）都要求选原因，都不计为完成；
+    // 区别只在记录里保存的用户意图，统计口径相同。
+    $('#btnEnd').classList.toggle('hidden', !(canFinish || (done && !breaking)));
+    $('#btnEnd').textContent = (done && !breaking) ? '结束' : '提前结束';
+    $('#btnGiveUp').classList.toggle('hidden', !canFinish);
+    $('#btnBreak').classList.toggle('hidden', !(done && !breaking));
+    $('#btnSkipBreak').classList.toggle('hidden', !breaking);
+
+    $('#taskSelect').disabled = !(T.state === 'idle' && !breaking);
+    $('#btnDistract').disabled = !(running && !breaking);
+
+    var bound = T.startedAt ? taskName(T.taskId) : '未绑定任务';
+    if (breaking) bound = '休息中';
+    $('#boundLabel').textContent = bound;
+
+    var hint = '开始前可以先绑定一个任务；不绑定也能开始。';
+    if (breaking) hint = '休息中：休息时间不计入专注统计。';
+    else if (running) hint = '专注中：离开页面超过 5 秒记 1 次分心，超过 2 分钟会自动暂停；提前结束或放弃都要选原因，且不计为完成。';
+    else if (paused) hint = '已暂停：暂停时间不计入有效专注，也不计分心。';
+    else if (done) hint = '完成！可以开始休息，或者直接结束回到空闲。';
+    $('#timerHint').textContent = hint;
+
+    renderFocusStats();
+  }
+
+  function renderFocusStats() {
+    var st = calcStats(sessionsToday());
+    var box = $('#focusStats');
+    box.textContent = '';
+    box.appendChild(statCard(formatMin(st.effMin) + ' 分钟', '今日有效专注'));
+    box.appendChild(statCard(String(st.completed), '今日完成番茄', '开始 ' + st.started + ' 个'));
+    box.appendChild(statCard(String(st.distract) + ' 次', '今日分心'));
+    box.appendChild(statCard(st.taskRate == null ? '无任务数据' : pct(st.taskRate), '今日任务完成率'));
+  }
+
+  function statCard(v, l, s) {
+    var d = el('div', 'stat');
+    d.appendChild(el('div', 'stat-v', v));
+    d.appendChild(el('div', 'stat-l', l));
+    if (s) d.appendChild(el('div', 'stat-s', s));
+    return d;
+  }
+
+  /* ---------------- 渲染：任务 ---------------- */
+  function statusLabel(s) {
+    return s === 'done' ? '已完成' : (s === 'doing' ? '进行中' : '未开始');
+  }
+  function statusClass(s) { return s === 'done' ? 'done' : (s === 'doing' ? 'doing' : 'todo'); }
+
+  function renderTaskSelect() {
+    var sel = $('#taskSelect');
+    var cur = sel.value;
+    sel.textContent = '';
+    var o = el('option', '', '不绑定任务');
+    o.value = '';
+    sel.appendChild(o);
+    tasks.filter(function (t) { return t.status !== 'done'; }).forEach(function (t) {
+      var op = el('option', '', t.name);
+      op.value = t.id;
+      sel.appendChild(op);
+    });
+    var still = tasks.some(function (t) { return t.id === cur && t.status !== 'done'; });
+    sel.value = still ? cur : '';
+  }
+
+  function renderTasks() {
+    var box = $('#taskList');
+    box.textContent = '';
+    if (!tasks.length) {
+      box.appendChild(el('p', 'empty', '还没有任务。新建一个，或者直接开始不绑定任务的专注。'));
+      return;
+    }
+    tasks.forEach(function (t) {
+      var row = el('div', 'task-row');
+      var left = el('div', 'task-main');
+      left.appendChild(el('div', 'task-name', t.name));
+      var mine = sessions.filter(function (s) { return s.taskId === t.id; });
+      var pomos = mine.filter(function (s) { return s.status === 'completed'; }).length;
+      var mins = Math.round(mine.reduce(function (a, s) { return a + (s.focusSec || 0); }, 0) / 60);
+      left.appendChild(el('div', 'task-meta', '预计 ' + t.plannedPomos + ' 个番茄 · 已完成 ' + pomos + ' 个 · 累计有效 ' + mins + ' 分钟'));
+      row.appendChild(left);
+
+      var right = el('div', 'task-actions');
+      right.appendChild(el('span', 'badge ' + statusClass(t.status), statusLabel(t.status)));
+      if (t.status !== 'done') {
+        var b = el('button', 'btn ghost small', '标记完成');
+        b.onclick = function () {
+          t.status = 'done';
+          t.completedAt = Date.now();
+          saveTasks();
+          renderAll();
+          toast('任务已标记完成');
+        };
+        right.appendChild(b);
+      }
+      var del = el('button', 'btn ghost small danger', '删除');
+      del.onclick = function () {
+        if (!confirm('删除任务「' + t.name + '」？已记录的番茄会保留，报告里显示为「已删除的任务」。')) return;
+        var i = tasks.indexOf(t);
+        if (i >= 0) tasks.splice(i, 1);
+        saveTasks();
+        renderAll();
+      };
+      right.appendChild(del);
+      row.appendChild(right);
+      box.appendChild(row);
+    });
+  }
+
+  /* ---------------- 渲染：报告 ---------------- */
+  var reportScope = 'today';
+
+  function renderReport() {
+    var list = reportScope === 'today' ? sessionsToday() : sessionsWeek();
+    var st = calcStats(list);
+    var parts = scoreParts(st);
+
+    $('#scopeNote').textContent = reportScope === 'today'
+      ? '按会话开始日期归属；跨天会话计入开始当天。'
+      : '本周一 00:00 起；跨天会话按开始日期。';
+
+    var box = $('#reportStats');
+    box.textContent = '';
+    box.appendChild(statCard(formatMin(st.effMin) + ' 分钟', '有效专注'));
+    box.appendChild(statCard(st.started ? pct(st.completed / st.started) : '—', '番茄完成率',
+      '完成 ' + st.completed + ' / 开始 ' + st.started));
+    box.appendChild(statCard(String(st.distract) + ' 次', '分心次数'));
+    box.appendChild(statCard(st.taskRate == null ? '无任务数据' : pct(st.taskRate), '任务完成率',
+      st.taskRate == null ? '本期没有绑定任务的番茄' : '完成 ' + st.taskDone + ' / 绑定 ' + st.taskTotal));
+
+    $('#minuteline').textContent =
+      '计划专注 ' + formatMin(st.plannedMin) + ' 分钟 · 实际有效 ' + formatMin(st.effMin) +
+      ' 分钟 · 暂停 ' + formatMin(st.pausedMin) + ' 分钟 · 放弃 ' + formatMin(st.abandonMin) +
+      ' 分钟（放弃部分仍计入有效专注，仅作损失提示）';
+
+    var hasData = st.started > 0;
+    $('#scoreNum').textContent = hasData ? parts.total : '—';
+
+    var items = $('#scoreItems');
+    items.textContent = '';
+    items.appendChild(scoreItem('有效专注率 ' + (hasData ? pct(parts.e) : '—'),
+      hasData ? (parts.e * parts.eMax).toFixed(1) + ' / ' + formatMin(parts.eMax) : '—'));
+    items.appendChild(scoreItem('分心控制率 ' + (hasData ? pct(parts.d) : '—'),
+      hasData ? (parts.d * parts.dMax).toFixed(1) + ' / ' + formatMin(parts.dMax) : '—'));
+    if (!hasData) {
+      items.appendChild(scoreItem('任务完成率 无任务数据', '—'));
+    } else if (parts.t == null) {
+      items.appendChild(scoreItem('任务完成率 无任务数据', '按 55 : 25 归一化'));
+    } else {
+      items.appendChild(scoreItem('任务完成率 ' + pct(parts.t),
+        (parts.t * parts.tMax).toFixed(1) + ' / ' + formatMin(parts.tMax)));
+    }
+
+    renderWeekBars();
+    renderDistractions(list);
+    renderInvest(list);
+    renderSummary(st, list);
+  }
+
+  function scoreItem(label, pts) {
+    var d = el('div', 'score-item');
+    d.appendChild(el('span', '', label));
+    d.appendChild(el('span', 'pts', pts));
+    return d;
+  }
+
+  function renderWeekBars() {
+    var start = startOfWeek(Date.now());
+    var days = [];
+    var max = 1;
+    for (var i = 0; i < 7; i++) {
+      var d = new Date(start);
+      d.setDate(d.getDate() + i);
+      var key = dayKey(d.getTime());
+      var min = sessions.filter(function (s) { return dayKey(s.startedAt) === key; })
+        .reduce(function (a, s) { return a + (s.focusSec || 0); }, 0) / 60;
+      if (min > max) max = min;
+      days.push({
+        key: key,
+        min: min,
+        label: ['一', '二', '三', '四', '五', '六', '日'][i],
+        today: key === dayKey(Date.now())
+      });
+    }
+    var box = $('#weekBars');
+    box.textContent = '';
+    days.forEach(function (d) {
+      var col = el('div', 'bar-col' + (d.today ? ' today' : ''));
+      var wrap = el('div', 'bar-wrap');
+      var bar = el('i');
+      bar.style.height = (d.min > 0 ? Math.max(2, (d.min / max) * 100) : 0) + '%';
+      wrap.appendChild(bar);
+      col.appendChild(wrap);
+      col.appendChild(el('div', 'wd', '周' + d.label));
+      col.appendChild(el('div', 'val', formatMin(d.min)));
+      box.appendChild(col);
+    });
+  }
+
+  function renderDistractions(list) {
+    var map = {};
+    list.forEach(function (s) {
+      (s.distractions || []).forEach(function (ts) {
+        var h = new Date(ts).getHours();
+        map[h] = (map[h] || 0) + 1;
+      });
+    });
+    var hours = Object.keys(map).map(Number).sort(function (a, b) { return a - b; });
+    var box = $('#distractList');
+    box.textContent = '';
+    if (!hours.length) {
+      box.appendChild(el('p', 'empty', reportScope === 'today' ? '今天没有记录到分心。' : '本周没有记录到分心。'));
+      return;
+    }
+    hours.forEach(function (h) {
+      var row = el('div', 'dist-row');
+      row.appendChild(el('span', '', pad2(h) + ':00 – ' + pad2(h + 1) + ':00'));
+      row.appendChild(el('span', 'muted', map[h] + ' 次'));
+      box.appendChild(row);
+    });
+  }
+
+  function renderInvest(list) {
+    var groups = [];
+    var index = {};
+    list.forEach(function (s) {
+      var key = s.taskId || '__none';
+      if (!index[key]) {
+        index[key] = { taskId: s.taskId || null, sec: 0, pomos: 0 };
+        groups.push(index[key]);
+      }
+      index[key].sec += s.focusSec || 0;
+      if (s.status === 'completed') index[key].pomos++;
+    });
+    groups.sort(function (a, b) { return b.sec - a.sec; });
+
+    var box = $('#taskInvest');
+    box.textContent = '';
+    if (!groups.length) {
+      box.appendChild(el('p', 'empty', '还没有专注记录。'));
+      return;
+    }
+    groups.forEach(function (g) {
+      var row = el('div', 'inv-row');
+      var name = g.taskId ? taskName(g.taskId) : '未绑定任务';
+      var status = '';
+      if (g.taskId) {
+        var t = tasks.find(function (x) { return x.id === g.taskId; });
+        status = t ? ' · ' + statusLabel(t.status) : ' · 已删除';
+      }
+      row.appendChild(el('span', '', name + status));
+      row.appendChild(el('span', 'muted', formatMin(g.sec / 60) + ' 分钟 / ' + g.pomos + ' 个番茄'));
+      box.appendChild(row);
+    });
+  }
+
+  function renderSummary(st, list) {
+    var box = $('#summary');
+    var scopeWord = reportScope === 'today' ? '今天' : '本周';
+    if (!list.length) {
+      box.textContent = scopeWord + '还没有专注记录。先从一个 ' + settings.focusMin + ' 分钟番茄开始吧。';
+      return;
+    }
+    var text = scopeWord + '有效专注 ' + formatMin(st.effMin) + ' 分钟，完成 ' + st.completed +
+      ' 个番茄，分心 ' + st.distract + ' 次。';
+    var p = peakOf(list);
+    if (p && p.count >= 2) {
+      text += '分心主要集中在 ' + p.hour + ' 点前后（' + p.count + ' 次）。';
+      if (p.hour < 12) text += '建议把最难的任务放在上午。';
+      else if (p.hour < 18) text += '下午容易被打断，需要连续思考的任务可以挪到上午。';
+      else text += '晚上分心较多，建议睡前一小时不再安排硬任务。';
+    } else if (st.distract === 0) {
+      text += '没有记录到分心。';
+    } else {
+      text += '分心比较分散，暂时看不出集中的时段。';
+    }
+    if (st.taskRate != null && st.taskRate < 0.5) {
+      text += '绑定任务的完成率偏低，可以先缩小任务粒度。';
+    }
+    box.textContent = text;
+  }
+
+  /* ---------------- 渲染：设置 ---------------- */
+  function renderSettings() {
+    $('#setFocus').value = settings.focusMin;
+    $('#setBreak').value = settings.breakMin;
+    $('#setVol').value = Math.round(noiseCfg.volume * 100);
+    $('#setVolText').textContent = Math.round(noiseCfg.volume * 100) + '%';
+  }
+
+  /* ---------------- 总渲染 ---------------- */
+  function renderAll() {
+    renderHeader();
+    renderTaskSelect();
+    renderFocus();
+    renderTasks();
+    renderReport();
+    renderSettings();
+    updateNoiseUI();
+  }
+
+  /* ---------------- 事件绑定 ---------------- */
+  $('#tabs').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-tab]');
+    if (!b) return;
+    $$('#tabs button').forEach(function (x) { x.classList.toggle('on', x === b); });
+    $$('.tab').forEach(function (sec) { sec.classList.toggle('on', sec.id === 'tab-' + b.dataset.tab); });
+    if (b.dataset.tab === 'report') renderReport();
+  });
+
+  $('#btnStart').onclick = startFocus;
+  $('#btnPause').onclick = function () { pauseTimer(); };
+  $('#btnResume').onclick = resumeTimer;
+  $('#btnBreak').onclick = startBreak;
+  $('#btnSkipBreak').onclick = skipBreak;
+  function openReason(status) {
+    if (T.state !== 'running' && T.state !== 'paused') return;
+    T.endStatus = status;
+    $$('#reasonOptions input').forEach(function (i) { i.checked = false; });
+    $('#reasonModal').classList.remove('hidden');
+  }
+
+  $('#btnEnd').onclick = function () {
+    if (T.state === 'done') {
+      resetTimer();
+      renderAll();
+      return;
+    }
+    openReason('ended');
+  };
+
+  $('#btnGiveUp').onclick = function () {
+    openReason('abandoned');
+  };
+
+  $('#reasonCancel').onclick = function () {
+    $('#reasonModal').classList.add('hidden');
+  };
+  $('#reasonOk').onclick = function () {
+    var picked = $('#reasonOptions input[name="reason"]:checked');
+    if (!picked) { toast('请选择一个原因'); return; }
+    $('#reasonModal').classList.add('hidden');
+    finishEarly(T.endStatus, picked.value);
+  };
+
+  $('#btnDistract').onclick = function () {
+    if (T.state !== 'running' || T.phase !== 'focus') return;
+    T.distractions.push(Date.now());
+    renderAll();
+    toast('已记录 1 次分心（手动）');
+  };
+
+  $('#taskAdd').onclick = function () {
+    var name = $('#taskName').value.trim();
+    if (!name) { toast('先给任务起个名字'); return; }
+    var planned = clampInt($('#taskPlanned').value, 1, 20, 4);
+    tasks.push({
+      id: uid(),
+      name: name.slice(0, 40),
+      plannedPomos: planned,
+      status: 'todo',
+      createdAt: Date.now(),
+      completedAt: null
+    });
+    saveTasks();
+    $('#taskName').value = '';
+    $('#taskPlanned').value = 4;
+    renderAll();
+    toast('任务已新建');
+  };
+
+  $('#reportSeg').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-scope]');
+    if (!b) return;
+    reportScope = b.dataset.scope;
+    $$('#reportSeg button').forEach(function (x) { x.classList.toggle('on', x === b); });
+    renderReport();
+  });
+
+  $('#noiseToggle').onclick = toggleNoise;
+  $('#noiseType').onchange = function () {
+    noiseCfg.type = this.value;
+    saveNoise();
+    if (noisePlaying) startNoise();
+    else updateNoiseUI();
+  };
+  $('#noiseVol').oninput = function () {
+    noiseCfg.volume = clamp(Number(this.value) / 100, 0, 1);
+    saveNoise();
+    if (noiseGain) noiseGain.gain.value = volumeGain();
+    $('#noiseVolText').textContent = this.value + '%';
+  };
+
+  $('#setVol').oninput = function () {
+    $('#setVolText').textContent = this.value + '%';
+  };
+
+  $('#saveSettings').onclick = function () {
+    settings.focusMin = clampInt($('#setFocus').value, 1, 120, 25);
+    settings.breakMin = clampInt($('#setBreak').value, 1, 60, 5);
+    noiseCfg.volume = clamp(Number($('#setVol').value) / 100, 0, 1);
+    saveSettings();
+    saveNoise();
+    if (T.state === 'idle' && T.phase === 'focus') resetTimer();
+    renderAll();
+    toast('设置已保存');
+  };
+
+  $('#clearData').onclick = function () {
+    if (!confirm('确定清空本模块的全部本地数据？此操作不可恢复。')) return;
+    if (!confirm('再次确认：任务、会话记录、设置都会被删除。')) return;
+    [KEY.sessions, KEY.tasks, KEY.settings, KEY.noise].forEach(function (k) {
+      try { localStorage.removeItem(k); } catch (e) {}
+    });
+    sessions = [];
+    tasks = [];
+    settings = { focusMin: 25, breakMin: 5 };
+    noiseCfg = { type: 'brown', volume: 0.5 };
+    stopNoise();
+    resetTimer();
+    renderAll();
+    toast('本地数据已清空');
+  };
+
+  /* ---------------- 启动 ---------------- */
+  renderAll();
+})();
+</script>
+<script src="ping.js"></script>
+</body>
+</html>

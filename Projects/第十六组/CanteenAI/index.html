@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#173f35">
+  <meta name="description" content="饭点雷达 CanteenAI——面向东南大学四牌楼校区的本地智能用餐决策演示应用">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23173f35'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%23a8cbb9' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%23ee7437'/%3E%3C/svg%3E">
+  <title>饭点雷达 CanteenAI</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="回到首页">
+      <span class="brand-mark"><span></span></span>
+      <span>饭点雷达 <small>CanteenAI</small></span>
+    </a>
+    <nav aria-label="主导航">
+      <a href="#decision">智能决策</a>
+      <a href="#radar">拥挤雷达</a>
+      <a href="#memory">饮食记忆</a>
+    </nav>
+    <button class="ghost-button" id="openMethod" type="button">算法说明</button>
+  </header>
+
+  <main id="top">
+    <section class="hero shell">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="pulse-dot"></span> 东南大学四牌楼校区 · 课程创意项目</div>
+        <h1>别把午休，<br><em>浪费在犹豫里。</em></h1>
+        <p>把预算、路程、排队和口味一起算清楚。CanteenAI 用可解释的本地规则，为每一次“吃什么”给出有依据的答案。</p>
+        <div class="hero-actions">
+          <a class="primary-button" href="#decision">开始决策</a>
+        </div>
+        <p class="honesty"><span>i</span> 本项目全部为模拟数据与课堂算法演示，不代表食堂真实营业或实时拥挤情况。</p>
+      </div>
+      <div class="hero-visual" aria-label="校园食堂雷达动态示意图">
+        <div class="radar-orbit orbit-1"></div>
+        <div class="radar-orbit orbit-2"></div>
+        <div class="radar-orbit orbit-3"></div>
+        <div class="radar-sweep"></div>
+        <div class="radar-center"><b>AI</b><small>正在扫描</small></div>
+        <div class="floating-chip chip-a"><span class="chip-icon">🍜</span><div><b>香园牛肉面</b><small>预计等待 8 分钟</small></div></div>
+        <div class="floating-chip chip-b"><span class="chip-icon">🥗</span><div><b>模拟轻食档口</b><small>预测较空闲</small></div></div>
+        <div class="floating-chip chip-c"><span class="chip-icon">🍛</span><div><b>沙塘园模拟窗口</b><small>匹配度 92%</small></div></div>
+      </div>
+    </section>
+
+    <section class="stats-strip" aria-label="项目特点">
+      <div><strong id="dishCount">60</strong><span>种模拟菜品</span></div>
+      <div><strong>6</strong><span>维决策模型</span></div>
+      <div><strong>0</strong><span>外部 API</span></div>
+      <div><strong>100%</strong><span>本地运行</span></div>
+    </section>
+
+    <section class="section shell" id="decision">
+      <div class="section-heading">
+        <div><span class="kicker">YOUR LUNCH, CALCULATED</span><h2>今天这顿，怎么吃最值？</h2></div>
+        <div class="scenario-picker">
+          <label for="scenarioSelect">演示场景</label>
+          <select id="scenarioSelect">
+            <option value="custom">自定义需求</option>
+            <option value="rush">赶课 · 30分钟速战速决</option>
+            <option value="budget">月底 · 12元以内吃饱</option>
+            <option value="comfort">降温 · 想吃热乎的面</option>
+            <option value="light">健身后 · 清淡高蛋白</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="mode-switcher" role="tablist" aria-label="用餐决策模式">
+        <button class="mode-tab active" type="button" role="tab" aria-selected="true" data-mode="smart"><span>✨</span><b>智能推荐</b><small>算出最适合你的选择</small></button>
+        <button class="mode-tab" type="button" role="tab" aria-selected="false" data-mode="compare"><span>⚖️</span><b>选择困难</b><small>2—3 个菜品一决高下</small></button>
+        <button class="mode-tab" type="button" role="tab" aria-selected="false" data-mode="blind"><span>🎁</span><b>盲盒探索</b><small>熟悉口味里的新发现</small></button>
+        <button class="mode-tab" type="button" role="tab" aria-selected="false" data-mode="team"><span>👥</span><b>多人组队</b><small>让每个人都满意</small></button>
+      </div>
+
+      <div class="mode-pane active" id="smartMode" data-pane="smart" role="tabpanel">
+      <div class="decision-grid">
+        <form class="panel preference-panel" id="preferenceForm">
+          <div class="panel-title"><span class="step-badge">01</span><div><h3>告诉雷达你的需求</h3><p>调整条件，推荐会实时重新计算</p></div></div>
+
+          <div class="nl-box">
+            <label for="nlInput">直接说出你的想法</label>
+            <div class="nl-row">
+              <textarea id="nlInput" rows="2" placeholder="例如：下午还有课，只有半小时，想吃面，预算15元"></textarea>
+              <button id="parseBtn" type="button" aria-label="解析自然语言">解析</button>
+            </div>
+            <div class="parse-result" id="parseResult" aria-live="polite">本地关键词与正则规则解析，不接入大模型</div>
+          </div>
+
+          <div class="field-grid">
+            <label class="field">预算上限 <b><span id="budgetValue">18</span> 元</b><input id="budget" type="range" min="8" max="35" value="18"></label>
+            <label class="field">空闲时间 <b><span id="freeTimeValue">45</span> 分钟</b><input id="freeTime" type="range" min="20" max="90" step="5" value="45"></label>
+          </div>
+          <label class="select-field">我现在在
+            <select id="location">
+              <option value="礼东">礼东</option><option value="礼西">礼西</option><option value="大礼堂">大礼堂</option><option value="图书馆">图书馆</option><option value="五四楼">五四楼</option><option value="东南院">东南院</option><option value="中山院">中山院</option>
+            </select>
+          </label>
+          <fieldset><legend>今天想吃</legend><div class="taste-chips" id="tasteChips">
+            <label><input type="radio" name="taste" value="不限" checked><span>都可以</span></label>
+            <label><input type="radio" name="taste" value="香辣"><span>🌶 香辣</span></label>
+            <label><input type="radio" name="taste" value="清淡"><span>🥬 清淡</span></label>
+            <label><input type="radio" name="taste" value="鲜香"><span>🥣 鲜香</span></label>
+            <label><input type="radio" name="taste" value="酸甜"><span>🍅 酸甜</span></label>
+          </div></fieldset>
+          <fieldset><legend>忌口 / 需求 <small>可多选</small></legend><div class="check-chips" id="dietChips">
+            <label><input type="checkbox" value="不辣"><span>不吃辣</span></label>
+            <label><input type="checkbox" value="无花生"><span>避开花生</span></label>
+            <label><input type="checkbox" value="素食"><span>素食</span></label>
+            <label><input type="checkbox" value="高蛋白"><span>高蛋白</span></label>
+          </div></fieldset>
+          <button class="primary-button full" type="submit">生成我的用餐方案</button>
+        </form>
+
+        <div class="results-column">
+          <article class="panel recommendation-card" id="topRecommendation" aria-live="polite"></article>
+          <div class="comparison-head"><div><h3>备选方案</h3><p>综合时间成本与匹配度排序</p></div><span class="sim-tag">模拟预测</span></div>
+          <div class="comparison-list" id="alternatives"></div>
+        </div>
+      </div>
+      </div>
+
+      <div class="mode-pane" id="compareMode" data-pane="compare" role="tabpanel" hidden>
+        <div class="mode-intro"><div><span class="kicker">DECISION DUEL</span><h3>纠结的菜，放到同一张图里比</h3><p>数据库菜品会自动补全；陌生菜品也可手动填写信息参与真实计算。</p></div><button class="demo-button compact" id="compareDemo" type="button">载入演示案例</button></div>
+        <div class="feature-grid compare-layout">
+          <form class="panel feature-form" id="compareForm">
+            <div class="panel-title"><span class="step-badge">A</span><div><h3>输入 2—3 个候选</h3><p>同名菜会从模拟数据库自动补全</p></div></div>
+            <datalist id="dishOptions"></datalist>
+            <div id="compareInputs" class="candidate-inputs"></div>
+            <div class="field-grid compact-fields">
+              <label class="select-field">比较时所在位置<select id="compareLocation"><option>礼东</option><option>礼西</option><option>大礼堂</option><option>图书馆</option><option>五四楼</option><option>东南院</option><option>中山院</option></select></label>
+              <label class="select-field">偏好口味<select id="compareTaste"><option>不限</option><option>香辣</option><option>清淡</option><option>鲜香</option><option>酸甜</option></select></label>
+            </div>
+            <button class="primary-button full" type="submit">开始综合对比</button>
+          </form>
+          <div class="panel feature-result compare-result" id="compareResult">
+            <div class="feature-empty"><span>⚖️</span><h3>等待候选菜品</h3><p>系统将比较价格、口味、排队、距离与历史偏好。</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mode-pane" id="blindMode" data-pane="blind" role="tabpanel" hidden>
+        <div class="mode-intro"><div><span class="kicker">TASTE DISCOVERY</span><h3>不是随机，是有把握的意外</h3><p>偏好相似度、新颖度和反馈共同决定结果，忌口始终是硬约束。</p></div><button class="demo-button compact" id="blindDemo" type="button">载入演示案例</button></div>
+        <div class="feature-grid blind-layout">
+          <form class="panel feature-form" id="blindForm">
+            <div class="panel-title"><span class="step-badge">B</span><div><h3>选择探索半径</h3><p>越大胆，新颖度权重越高</p></div></div>
+            <div class="adventure-levels">
+              <label><input type="radio" name="adventure" value="safe" checked><span><b>稳妥尝鲜</b><small>70% 熟悉偏好 + 30% 新颖</small></span></label>
+              <label><input type="radio" name="adventure" value="medium"><span><b>适度冒险</b><small>偏好与新颖各占一半</small></span></label>
+              <label><input type="radio" name="adventure" value="bold"><span><b>大胆探索</b><small>30% 熟悉偏好 + 70% 新颖</small></span></label>
+            </div>
+            <fieldset><legend>安全边界 <small>任何等级都不会突破</small></legend><div class="check-chips" id="blindDietChips">
+              <label><input type="checkbox" value="不辣"><span>不吃辣</span></label><label><input type="checkbox" value="无花生"><span>避开花生</span></label><label><input type="checkbox" value="素食"><span>素食</span></label><label><input type="checkbox" value="高蛋白"><span>高蛋白</span></label>
+            </div></fieldset>
+            <label class="select-field">出发位置<select id="blindLocation"><option>礼东</option><option>礼西</option><option>大礼堂</option><option>图书馆</option><option>五四楼</option><option>东南院</option><option>中山院</option></select></label>
+            <button class="primary-button full" type="submit">开启我的探索盲盒</button>
+          </form>
+          <div class="panel blind-stage" id="blindStage">
+            <div class="blind-box" id="blindBox"><div class="box-lid"></div><div class="box-body"><span>?</span><small>CanteenAI</small></div></div>
+            <div class="blind-copy" id="blindResult"><h3>里面不是随机答案</h3><p>点击开启后，系统才会展示经过约束过滤与探索排序的结果。</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mode-pane" id="teamMode" data-pane="team" role="tabpanel" hidden>
+        <div class="mode-intro"><div><span class="kicker">FAIRNESS FOR EVERYONE</span><h3>一起吃饭，不让任何人委屈</h3><p>先选共同食堂，再为每位成员搭配不同菜品，同时优化平均满意度与最低满意度。</p></div><button class="demo-button compact" id="teamDemo" type="button">载入演示案例</button></div>
+        <div class="team-grid">
+          <form class="panel feature-form team-form" id="teamForm">
+            <div class="team-form-head"><div class="panel-title"><span class="step-badge">C</span><div><h3>组队成员</h3><p>支持 2—6 人，每个人可以有不同需求</p></div></div><button class="ghost-button" id="addMember" type="button">添加成员</button></div>
+            <div class="member-header"><span>昵称</span><span>预算</span><span>口味</span><span>忌口</span><span>用餐时间</span><span></span></div>
+            <div id="memberList" class="member-list"></div>
+            <button class="primary-button full" type="submit">生成公平组队方案</button>
+          </form>
+          <div class="panel feature-result team-result" id="teamResult">
+            <div class="feature-empty"><span>👥</span><h3>至少需要两位成员</h3><p>结果会展示共同食堂、个人菜品、满意度与偏好冲突。</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="radar-section" id="radar">
+      <div class="shell">
+        <div class="section-heading light-heading">
+          <div><span class="kicker">CROWD INTELLIGENCE</span><h2>食堂拥挤雷达</h2><p>基于预设客流曲线与时段系数生成的模拟预测</p></div>
+          <div class="clock-card"><span>模拟出发时间</span><strong id="simTimeLabel">11:45</strong><small id="mealPeriod">午餐高峰</small></div>
+        </div>
+        <div class="radar-grid">
+          <div class="campus-card">
+            <div class="map-toolbar"><b>四牌楼校区 · 简化示意</b><span><i></i> 越红表示模拟预测越拥挤</span></div>
+            <div class="campus-map" id="campusMap">
+              <div class="road road-h"></div><div class="road road-v"></div>
+              <span class="map-label label-lixi">礼西</span><span class="map-label label-lidong">礼东</span><span class="map-label label-hall">大礼堂</span><span class="map-label label-lib">图书馆</span><span class="map-label label-wusi">五四楼</span><span class="map-label label-dongnan">东南院</span><span class="map-label label-zhongshan">中山院</span>
+              <div class="canteen-node n1" data-canteen="沙塘园食堂" tabindex="0"><span class="heat-ring"></span><b>沙塘园</b><small></small></div>
+              <div class="canteen-node n2" data-canteen="香园食堂" tabindex="0"><span class="heat-ring"></span><b>香园</b><small></small></div>
+              <div class="canteen-node n3" data-canteen="莘园食堂" tabindex="0"><span class="heat-ring"></span><b>莘园</b><small></small></div>
+              <div class="you-marker"><span id="youMarkerLabel">礼东 · 你在这里</span></div>
+            </div>
+            <p class="map-note">参考项目内校园地图重绘；位置仅表达相对关系，步行时间为模拟估算，排队为模拟预测，均非精确地图或实时数据。</p>
+          </div>
+          <div class="trend-card">
+            <div class="trend-title"><div><b>今日拥挤趋势</b><span id="selectedCanteen">沙塘园食堂</span></div><span class="sim-tag dark">预测模型</span></div>
+            <canvas id="trendChart" width="680" height="310" aria-label="模拟拥挤趋势曲线"></canvas>
+            <div class="trend-legend"><span><i class="line-orange"></i>当前食堂</span><span><i class="line-dash"></i>校园均值</span></div>
+          </div>
+        </div>
+
+        <div class="time-machine">
+          <div class="time-copy"><span class="step-badge orange">02</span><div><h3>时空模拟器</h3><p>拖动时间，看看晚走十分钟是否更划算</p></div></div>
+          <div class="slider-wrap"><input id="timeSlider" type="range" min="660" max="810" step="5" value="705" aria-label="模拟出发时间"><div class="time-ticks"><span>11:00</span><span>11:30</span><span>12:00</span><span>12:30</span><span>13:00</span><span>13:30</span></div></div>
+          <div class="time-impact" id="timeImpact"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section shell" id="memory">
+      <div class="section-heading">
+        <div><span class="kicker">TASTE MEMORY</span><h2>越吃，越懂你</h2><p>记录只保存在这台设备的浏览器中，你可以随时清空。</p></div>
+        <button class="ghost-button danger" id="clearMemory" type="button">清空饮食记忆</button>
+      </div>
+      <div class="memory-grid">
+        <div class="panel memory-summary">
+          <div class="memory-orb"><span id="memoryScore">0</span><small>次记录</small></div>
+          <div><h3>你的口味画像</h3><p id="profileText">还没有用餐记录，完成一次选择后雷达会开始学习。</p><div class="profile-tags" id="profileTags"><span>等待探索</span></div></div>
+        </div>
+        <div class="panel history-card">
+          <div class="card-head"><h3>最近吃过</h3><span>自动降低重复推荐</span></div><div id="historyList" class="history-list"></div>
+        </div>
+        <div class="panel favorite-card">
+          <div class="card-head"><h3>我的收藏</h3><span>本地保存</span></div><div id="favoriteList" class="history-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="closing shell">
+      <div><span class="kicker">ONE DECISION, SIX FACTORS</span><h2>每一个推荐，<br>都有迹可循。</h2></div>
+      <div class="factor-wheel" aria-label="六维推荐因素"><span>预算</span><span>口味</span><span>距离</span><span>排队</span><span>时间</span><span>记忆</span><b>CanteenAI</b></div>
+      <div class="closing-copy"><p>这不是接入大模型的“魔法”。它是一套实际运行的多因素加权排序：先过滤忌口，再计算预算、口味、距离、排队、总耗时和个人记忆分，最后给出可解释推荐。</p><button id="openMethod2" class="text-button" type="button">查看完整算法原理</button></div>
+    </section>
+  </main>
+
+  <footer><div class="shell"><div class="brand footer-brand"><span class="brand-mark"><span></span></span><span>饭点雷达 <small>CanteenAI</small></span></div><p>东南大学《人工智能导论》课程创意项目 · 仅供教学演示</p><p>数据与预测均为模拟</p></div></footer>
+
+  <dialog id="methodDialog">
+    <div class="dialog-head"><div><span class="kicker">HOW IT WORKS</span><h2>算法不是黑盒</h2></div><button id="closeMethod" type="button" aria-label="关闭">×</button></div>
+    <div class="method-content">
+      <section><h3>1. 自然语言解析</h3><p>用正则表达式提取“15元”“半小时”等数字，用关键词词典识别地点、口味、菜品类型和忌口。所有计算在浏览器内完成，没有调用大模型或外部接口。</p></section>
+      <section><h3>2. 多因素加权排序</h3><div class="formula">总分 = 预算 20% + 口味 20% + 排队 18% + 距离 17% + 时间可行性 15% + 饮食记忆 10%</div><p>不满足忌口的菜品先被过滤；超预算或总耗时超出空闲时间会受到显著扣分。最近吃过的菜品加入多样性惩罚，收藏与积极反馈则提高偏好分。</p></section>
+      <section><h3>3. 拥挤预测</h3><p>每个食堂有一条预设的午餐客流基线，通过高斯峰值函数模拟 12:00 左右的高峰，再叠加食堂系数和确定性的微小波动。它只用于展示预测思路，不是真实客流。</p></section>
+      <section><h3>4. 时间价值</h3><p>总耗时 = 步行时间 + 预测排队时间 + 预计用餐时间。应用比较各方案在同一空闲时间内的可行性，并提示最快方案与省下的时间。</p></section>
+      <section><h3>5. 选择困难对比</h3><p>把价格、口味、排队、距离与历史偏好都归一化到 0—100 分，再按 20%、25%、20%、18%、17% 加权。雷达图直接使用这五项真实计算结果，未入库菜品采用用户手动填写的信息。</p></section>
+      <section><h3>6. 盲盒探索</h3><p>先执行忌口硬过滤，再根据探索等级调整“偏好相似度”和“新颖程度”的权重，并保留 18% 的排队与距离实用性分。大胆探索只改变软权重，绝不会跳过过敏或忌口条件。</p></section>
+      <section><h3>7. 多人公平推荐</h3><p>在每个共同食堂内，为每位成员分别寻找最高满意菜品。团队公平分 = 平均满意度 × 60% + 最低个人满意度 × 40%，因此不能用多数人的高分掩盖某一位成员的低体验。</p></section>
+    </div>
+  </dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>

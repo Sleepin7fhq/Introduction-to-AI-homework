@@ -1,0 +1,62 @@
+﻿{
+    "listenHost":  "0.0.0.0",
+    "listenPort":  3090,
+    "upstream":  "http://127.0.0.1:3080",
+    "dshRoot":  null,
+    "dshWebLog":  "C:/dsh-share/probe/dsh-web.log",
+    "workspaceRoot":  "C:\\dsh-share\\hubhome\\workspaces",
+    "sharedRoot":  "C:\\dsh-share\\hubhome\\shared",
+    "users":  [
+                  {
+                      "name":  "admin",
+                      "role":  "admin",
+                      "status":  "active",
+                      "salt":  "55a3f56503ea4c92bd898c76391f7b84",
+                      "hash":  "eb5efccbec9e8ebf0fabc11b9618955462d7a5d7d5c79a14e51900cf0abe886f057e6219a9e0d0eac091253df3bcb6b1466a73cd81273ebbd108f908a475a049",
+                      "mustChangePassword":  true,
+                      "createdAt":  "2026-11-14T08:37:03.619Z",
+                      "updatedAt":  "2026-11-21T08:06:06.086Z",
+                      "lastLoginAt":  "2026-11-21T08:06:19.893Z"
+                  },
+                  {
+                      "name":  "alice",
+                      "role":  "member",
+                      "status":  "active",
+                      "salt":  "a95a6d5f70ff89e54cf876abd3318cff",
+                      "hash":  "ef5fd694df06d58cbfea4ee760c862b62ac7b4320b8e64aad5f00ec054cc3a04380e3abde3ebf62e92b9a89b599b6747d6f81ae955e9eb141e34b5efbe366bfb",
+                      "mustChangePassword":  true,
+                      "createdAt":  "2026-11-14T08:37:03.646Z",
+                      "updatedAt":  "2026-11-21T08:06:06.222Z",
+                      "lastLoginAt":  "2026-11-21T08:06:06.150Z"
+                  },
+                  {
+                      "name":  "bob",
+                      "role":  "member",
+                      "status":  "active",
+                      "salt":  "caf12eaba87ea925f0a30863bfc27e38",
+                      "hash":  "b92ba03189faa734163a7f2ba3c1795b0a169d914926e519354c477467c4e407efcdf3276e2e69090a4a4a4e0fc830c1f8a9c0a77485c18029915d5a8f787a31",
+                      "mustChangePassword":  true,
+                      "createdAt":  "2026-11-14T08:37:03.672Z",
+                      "updatedAt":  "2026-11-21T08:06:06.357Z",
+                      "lastLoginAt":  "2026-11-21T08:06:09.475Z"
+                  },
+                  {
+                      "name":  "carol",
+                      "role":  "member",
+                      "status":  "active",
+                      "salt":  "b4bffee1a5e1715ec47bd53689b9ee2e",
+                      "hash":  "76761958514174f470b23aa2d90e94fbe93abc9474e9b960bd00b197d952da04b3e5ea2e0d3415f1419f296ffd1704668ef4b43b1e3ea9b7d19752a47df48143",
+                      "mustChangePassword":  true,
+                      "createdAt":  "2026-11-19T09:35:37.069Z",
+                      "updatedAt":  "2026-11-21T07:58:25.250Z",
+                      "lastLoginAt":  "2026-11-21T08:06:05.933Z"
+                  }
+              ],
+    "workspaceShares":  {
+
+                        },
+    "sessionHolders":  {
+
+                       },
+    "memberContextInjection":  true
+}

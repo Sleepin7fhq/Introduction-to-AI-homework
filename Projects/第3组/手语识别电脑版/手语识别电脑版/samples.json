@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "classes": [
+    { "name": "手势 1", "samples": [] },
+    { "name": "手势 2", "samples": [] },
+    { "name": "手势 3", "samples": [] }
+  ]
+}

@@ -1,0 +1,20 @@
+[
+    {
+        "label":  "A-普通EDM(改后)",
+        "bars":  8,
+        "style":  "classic_edm",
+        "prompt":  "老板画的饼，很燃，高能 drop，电子舞曲"
+    },
+    {
+        "label":  "B-司凤Rave(改后)",
+        "bars":  8,
+        "style":  "sifeng_rave",
+        "prompt":  "老板画的饼，很燃，高能 drop，鬼畜"
+    },
+    {
+        "label":  "C-Hardstyle(改后)",
+        "bars":  8,
+        "style":  "hardstyle",
+        "prompt":  "老板画的饼，很燃，高能 drop，硬核"
+    }
+]

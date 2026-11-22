@@ -1,0 +1,10 @@
+@echo off
+rem 防止误提交依赖与缓存
+node_modules/
+.tmp/
+_backup/
+.npm-cache/
+.npm-logs/
+.shots/
+.render/
+*.log

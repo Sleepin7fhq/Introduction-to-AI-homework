@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>练习 · 梦见月瑞习</title>
+<link rel="icon" href="mizuki-128.png">
+<link rel="stylesheet" href="/static/theme.css">
+<style>
+.cfgbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+.cfgbar select{border:1px solid var(--line);border-radius:10px;padding:9px 13px;font-family:inherit;
+  font-size:14px;background:#fff;color:var(--ink);outline:none;cursor:pointer}
+.modes{display:flex;gap:6px;background:#F2ECFA;padding:4px;border-radius:11px}
+.modes button{border:none;background:transparent;border-radius:8px;padding:7px 18px;font-size:13.5px;
+  font-family:inherit;cursor:pointer;color:var(--muted);font-weight:550;transition:.15s}
+.modes button.on{background:#fff;color:var(--green);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.stars{display:flex;gap:4px;align-items:center}
+.stars button{border:none;background:transparent;font-size:19px;cursor:pointer;color:#D9CFE8;
+  padding:0 1px;line-height:1;transition:.12s}
+.stars button.on{color:var(--amber)}
+.stars .lbl{font-size:12.5px;color:var(--muted);margin-left:6px}
+
+.pcard{background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:16px}
+.phead{display:flex;gap:9px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.badge2{font-size:11.5px;padding:3px 9px;border-radius:7px;background:#F2ECFA;color:#8B8199}
+.badge2.type{background:var(--green-soft);color:var(--green)}
+.badge2.pt{background:#FBF2E6;color:#9A6A2F}
+.stem{font-size:16.5px;line-height:1.9;margin-bottom:16px;white-space:pre-wrap}
+.stem code{background:#F2ECFA;padding:1px 5px;border-radius:4px;font-family:ui-monospace,Menlo,Consolas,monospace}
+.opts{display:flex;flex-direction:column;gap:9px}
+.opt{border:1px solid var(--line);border-radius:11px;padding:11px 15px;cursor:pointer;font-size:15px;
+  background:#fff;transition:.15s;text-align:left;font-family:inherit;color:var(--ink);line-height:1.7}
+.opt:hover{border-color:var(--green);background:#FBF8FF}
+.opt.sel{border-color:var(--green);background:var(--green-soft);font-weight:550}
+.opt.right{border-color:var(--green);background:var(--green-soft)}
+.opt.wrong{border-color:var(--red);background:var(--red-soft)}
+.fill{width:100%;border:1px solid var(--line);border-radius:11px;padding:12px 15px;font-size:15px;
+  font-family:inherit;outline:none;background:#FAF6FE;box-sizing:border-box}
+.fill:focus{border-color:var(--green);background:#fff}
+.work{width:100%;min-height:110px;border:1px solid var(--line);border-radius:11px;padding:13px 15px;
+  font-size:15px;font-family:inherit;line-height:1.8;outline:none;background:#FAF6FE;resize:vertical;box-sizing:border-box}
+.work:focus{border-color:var(--green);background:#fff}
+
+.upload{margin-top:12px;border:1.5px dashed #D9CFE8;border-radius:12px;padding:16px;text-align:center;
+  font-size:13.5px;color:var(--muted);cursor:pointer;transition:.15s;background:#FAF6FE}
+.upload:hover,.upload.drag{border-color:var(--green);color:var(--green);background:#F8F4FE}
+.thumb{margin-top:10px;position:relative;display:inline-block}
+.thumb img{max-width:200px;max-height:150px;border-radius:10px;border:1px solid var(--line);display:block}
+.thumb button{position:absolute;top:-8px;right:-8px;width:24px;height:24px;border-radius:50%;
+  border:none;background:var(--red);color:#fff;cursor:pointer;font-size:14px;line-height:1}
+
+.actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;align-items:center}
+.scorebar{display:flex;align-items:center;gap:16px;padding:16px 20px;border-radius:14px;
+  background:#F9F5FE;border:1px solid var(--line);margin-top:16px}
+.scorebar .big{font-size:30px;font-weight:700;line-height:1;color:var(--green)}
+.scorebar .big.bad{color:var(--red)}
+.scorebar .sub{font-size:13px;color:var(--muted)}
+.fb{font-size:14.5px;line-height:1.8;color:#3A3348}
+.errs{margin:10px 0 0;padding-left:20px;font-size:14px;line-height:1.8;color:#7A4A5E}
+.errs li{margin-bottom:4px}
+details.sol{margin-top:14px;border-top:1px dashed var(--line);padding-top:12px}
+details.sol summary{cursor:pointer;color:var(--green);font-size:14px;font-weight:550;outline:none}
+details.sol .body{font-size:14.5px;line-height:1.9;margin-top:10px;white-space:pre-wrap;color:#3A3348}
+.ref{font-size:14px;color:#4A4356;margin-top:8px}
+.ref b{color:var(--green)}
+.skel{height:120px;border-radius:14px;background:linear-gradient(90deg,#F2ECFA 25%,#F9F5FE 37%,#F2ECFA 63%);
+  background-size:400% 100%;animation:shine 1.3s infinite;margin-bottom:14px}
+@keyframes shine{0%{background-position:100% 0}100%{background-position:0 0}}
+.paperbar{display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:14px;
+  background:var(--green);color:#fff;margin-bottom:16px}
+.paperbar .t{font-size:15px;font-weight:600}
+.paperbar .s{font-size:13px;opacity:.85}
+.paperbar .spacer{flex:1}
+.paperbar button{background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:10px;
+  padding:8px 16px;font-size:13.5px;cursor:pointer;font-family:inherit}
+.paperbar button:hover{background:rgba(255,255,255,.26)}
+
+/* ---------- 上传出题 / 错题集 ---------- */
+.uploadbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#fff;border:1px solid var(--line);
+  border-radius:16px;padding:14px 18px;margin-bottom:16px}
+.uploadbar .grow{flex:1;min-width:200px}
+.uploadbar .t{font-size:14.5px;font-weight:600}
+.uploadbar .s{font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.6}
+.uploadbar .fname{font-size:12.5px;color:var(--muted);max-width:220px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.opt.static{cursor:default}
+.opt.static:hover{border-color:var(--line);background:#fff}
+.wrongbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;font-size:13.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="logo logo-img" href="/" style="text-decoration:none" aria-label="梦见月瑞习"></a>
+    <div class="brand">
+      <h1>练习</h1>
+      <p>梦见月瑞习 · AI 出题 · 上传识别 · 自动批改</p>
+    </div>
+    <div class="spacer"></div>
+    <span class="badge" id="engineBadge">引擎检测中…</span>
+    <a class="badge" href="/">← 返回</a>
+  </header>
+
+  <div class="uploadbar">
+    <div class="grow">
+      <div class="t">从文件出题</div>
+      <div class="s">支持 PDF / Word(.docx) / PPT(.pptx) / 图片 / txt</div>
+    </div>
+    <input type="file" id="fileInput" accept=".pdf,.docx,.pptx,.txt,.md,.png,.jpg,.jpeg,.webp" style="display:none">
+    <button class="btn ghost" id="pickFile">选择文件</button>
+    <span class="fname" id="fileName">未选择文件</span>
+    <button class="btn primary" id="uploadBtn" disabled>识别并出相似题</button>
+  </div>
+
+  <div class="cfgbar">
+    <select id="subject">
+      <option value="linear">线性代数</option>
+      <option value="math">高等数学（工数）</option>
+    </select>
+    <div class="stars" id="stars"></div>
+    <div class="modes">
+      <button data-mode="single" class="on">单题练习</button>
+      <button data-mode="paper">试卷练习</button>
+    </div>
+    <span class="spacer" style="flex:1"></span>
+    <button class="btn ghost" id="wrongBtn">错题集 <span id="wrongCount">0</span></button>
+    <button class="btn primary" id="makeBtn">出一道题</button>
+  </div>
+
+  <div id="board"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s == null ? "" : s)
+  .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const nl2br = (s) => esc(s).replace(/\n/g, "<br>");
+
+const S = {
+  subject: "linear",
+  diff: 3,
+  mode: "single",
+  questions: [],
+  answers: {},
+  images: {},
+  results: {},
+  busy: false,
+};
+
+function toast(t) {
+  const el = $("#toast"); el.textContent = t; el.classList.add("show");
+  clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove("show"), 2200);
+}
+
+/* ---------------- 个人错题集（只存错题，localStorage） ---------------- */
+const WRONG_KEY = "practice.wrong.v1";
+let showingWrong = false;
+
+function loadWrong() {
+  try {
+    const list = JSON.parse(localStorage.getItem(WRONG_KEY) || "[]");
+    return Array.isArray(list) ? list : [];
+  } catch (e) { return []; }
+}
+function saveWrong(list) {
+  try { localStorage.setItem(WRONG_KEY, JSON.stringify(list.slice(-100))); } catch (e) {}
+}
+function updateWrongCount() {
+  $("#wrongCount").textContent = loadWrong().length;
+}
+function qById(id) {
+  return S.questions.find((q) => q.id === id);
+}
+function addWrong(q, r) {
+  if (!q || !r || r.correct || !r.ref_answer) return;
+  const list = loadWrong();
+  if (list.some((x) => x.stem === q.stem)) return;
+  list.push({
+    type: q.type,
+    stem: q.stem,
+    options: q.options || [],
+    topic: q.topic || "",
+    points: q.points || 0,
+    ref_answer: r.ref_answer || "",
+    solution: r.solution || ""
+  });
+  saveWrong(list);
+  updateWrongCount();
+}
+
+/* ---------------- 配置栏 ---------------- */
+const DIFF_TXT = ["", "基础", "简单", "中等", "较难", "挑战"];
+
+function renderStars() {
+  const box = $("#stars");
+  box.innerHTML = [1, 2, 3, 4, 5].map((i) =>
+    `<button data-d="${i}" class="${i <= S.diff ? "on" : ""}">★</button>`).join("") +
+    `<span class="lbl">${DIFF_TXT[S.diff]}</span>`;
+  box.querySelectorAll("button").forEach((b) => {
+    b.onclick = () => { S.diff = +b.dataset.d; renderStars(); };
+  });
+}
+renderStars();
+
+$("#subject").onchange = (e) => { S.subject = e.target.value; };
+document.querySelectorAll(".modes button").forEach((b) => {
+  b.onclick = () => {
+    document.querySelectorAll(".modes button").forEach((x) => x.classList.toggle("on", x === b));
+    S.mode = b.dataset.mode;
+    $("#makeBtn").textContent = S.mode === "single" ? "出一道题" : "生成试卷";
+    $("#board").innerHTML = "";
+    S.questions = []; S.answers = {}; S.images = {}; S.results = {};
+    showingWrong = false;
+  };
+});
+
+/* ---------------- 出题 ---------------- */
+$("#makeBtn").onclick = async () => {
+  if (S.busy) return;
+  S.busy = true;
+  const btn = $("#makeBtn");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>出题中';
+  const n = S.mode === "single" ? 1 : 5;
+  $("#board").innerHTML = Array.from({ length: n }, () => '<div class="skel"></div>').join("");
+
+  try {
+    const r = await (await fetch("/api/practice/generate", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subject: S.subject, difficulty: S.diff, count: n })
+    })).json();
+    if (r.error) throw new Error(r.error);
+    S.questions = r.questions;
+    S.answers = {}; S.images = {}; S.results = {};
+    renderBoard();
+  } catch (e) {
+    $("#board").innerHTML = '<div class="pcard" style="color:#B5486A">出题失败：' + esc(e.message) + "</div>";
+  } finally {
+    S.busy = false;
+    btn.disabled = false;
+    btn.textContent = S.mode === "single" ? "出一道题" : "生成试卷";
+  }
+};
+
+/* ---------------- 渲染题目 ---------------- */
+function renderBoard() {
+  showingWrong = false;
+  const list = S.questions;
+  let html = "";
+
+  if (S.mode === "paper") {
+    const graded = Object.keys(S.results).length === list.length && list.length > 0;
+    const total = graded ? Object.values(S.results).reduce((a, r) => a + (r.score || 0), 0) : 0;
+    const full = list.reduce((a, q) => a + q.points, 0);
+    html += '<div class="paperbar">' +
+      '<div><div class="t">' + (graded ? "试卷已批改" : "共 " + list.length + " 题") + "</div>" +
+      '<div class="s">' + (graded ? "总分 " + total + " / " + full + " 分" : "全部做完后点右侧交卷") + "</div></div>" +
+      '<div class="spacer"></div>' +
+      (graded ? '<button onclick="location.reload()">再来一套</button>'
+              : '<button id="submitPaper">交卷批改</button>') +
+      "</div>";
+  }
+
+  list.forEach((q, i) => { html += questionHTML(q, i); });
+  $("#board").innerHTML = html;
+  bindBoard();
+}
+
+function questionHTML(q, i) {
+  const r = S.results[q.id];
+  const ans = S.answers[q.id] || "";
+  let body = "";
+
+  if (q.type === "choice") {
+    body = '<div class="opts">' + q.options.map((o, k) => {
+      const letter = String.fromCharCode(65 + k);
+      let cls = "opt";
+      if (r) {
+        if (letter === String(r.ref_answer).trim().toUpperCase().charAt(0)) cls += " right";
+        else if (letter === String(ans).trim().toUpperCase().charAt(0)) cls += " wrong";
+      } else if (ans === letter) cls = "opt sel";
+      return `<button class="${cls}" data-q="${q.id}" data-v="${letter}" ${r ? "disabled" : ""}>${esc(o)}</button>`;
+    }).join("") + "</div>";
+  } else if (q.type === "fill") {
+    body = `<input class="fill" data-q="${q.id}" placeholder="填答案，例如 3 或 2x+1" value="${esc(ans)}" ${r ? "disabled" : ""}>`;
+  } else {
+    const img = S.images[q.id];
+    body = `<textarea class="work" data-q="${q.id}" placeholder="写出解题过程，或者拍照上传（二选一或都用）" ${r ? "disabled" : ""}>${esc(ans)}</textarea>`;
+    if (!r) {
+      body += '<div class="upload" data-q="' + q.id + '">📷 点击上传解题过程照片，或把图片拖进来</div>' +
+        (img ? `<div class="thumb"><img src="${img}"><button data-del="${q.id}">×</button></div>` : "");
+    } else if (img) {
+      body += `<div class="thumb"><img src="${img}"></div>`;
+    }
+  }
+
+  let verdict = "";
+  if (r) {
+    const pct = r.full ? r.score / r.full : 0;
+    verdict = '<div class="scorebar">' +
+      '<div class="big ' + (pct >= 0.8 ? "" : "bad") + '">' + r.score + "</div>" +
+      '<div><div class="sub">满分 ' + r.full + " 分</div>" +
+      '<div class="sub">' + (r.correct ? "✓ 正确" : "✗ 需要再看看") + "</div></div>" +
+      '<div style="flex:1"></div></div>' +
+      (r.feedback ? '<p class="fb" style="margin-top:12px">' + esc(r.feedback) + "</p>" : "") +
+      (r.errors && r.errors.length ? '<ul class="errs">' + r.errors.map((x) => "<li>" + esc(x) + "</li>").join("") + "</ul>" : "") +
+      (r.read ? '<p class="sub" style="margin-top:8px;color:#8B8199">AI 从你的作答里读到：' + esc(r.read) + "</p>" : "") +
+      '<div class="ref">参考答案：<b>' + esc(r.ref_answer) + "</b></div>" +
+      (r.solution ? '<details class="sol"><summary>展开完整解析</summary><div class="body">' + nl2br(r.solution) + "</div></details>" : "");
+  }
+
+  return '<div class="pcard">' +
+    '<div class="phead">' +
+      (S.mode === "paper" ? '<span class="badge2">第 ' + (i + 1) + " 题</span>" : "") +
+      '<span class="badge2 type">' + (q.type === "choice" ? "选择题" : q.type === "fill" ? "填空题" : "计算题") + "</span>" +
+      (q.topic ? '<span class="badge2">' + esc(q.topic) + "</span>" : "") +
+      '<span class="badge2 pt">' + q.points + " 分</span>" +
+    "</div>" +
+    '<div class="stem">' + nl2br(q.stem) + "</div>" +
+    body +
+    (q.hint && !r ? '<p class="sub" style="margin-top:10px;color:#A69BB8;font-size:13px">提示：' + esc(q.hint) + "</p>" : "") +
+    (S.mode === "single" && !r ? '<div class="actions"><button class="btn primary" id="gradeOne" data-q="' + q.id + '">提交批改</button></div>' : "") +
+    verdict +
+    "</div>";
+}
+
+/* ---------------- 事件绑定 ---------------- */
+function bindBoard() {
+  document.querySelectorAll(".opt[data-q]").forEach((b) => {
+    if (!b.disabled) b.onclick = () => {
+      S.answers[b.dataset.q] = b.dataset.v;
+      renderBoard();
+    };
+  });
+  document.querySelectorAll(".fill[data-q]").forEach((el) => {
+    el.oninput = () => { S.answers[el.dataset.q] = el.value; };
+  });
+  document.querySelectorAll(".work[data-q]").forEach((el) => {
+    el.oninput = () => { S.answers[el.dataset.q] = el.value; };
+  });
+
+  document.querySelectorAll(".upload[data-q]").forEach((u) => {
+    const qid = u.dataset.q;
+    const input = document.createElement("input");
+    input.type = "file"; input.accept = "image/*"; input.style.display = "none";
+    document.body.appendChild(input);
+    u.onclick = () => input.click();
+    input.onchange = () => { if (input.files[0]) pickImage(qid, input.files[0]); };
+    u.ondragover = (e) => { e.preventDefault(); u.classList.add("drag"); };
+    u.ondragleave = () => u.classList.remove("drag");
+    u.ondrop = (e) => {
+      e.preventDefault(); u.classList.remove("drag");
+      const f = e.dataTransfer.files && e.dataTransfer.files[0];
+      if (f) pickImage(qid, f);
+    };
+  });
+
+  document.querySelectorAll("[data-del]").forEach((b) => {
+    b.onclick = () => { delete S.images[b.dataset.del]; renderBoard(); };
+  });
+
+  const g = $("#gradeOne");
+  if (g) g.onclick = () => gradeOne(g.dataset.q);
+  const sp = $("#submitPaper");
+  if (sp) sp.onclick = submitPaper;
+}
+
+/* ---------------- 错题集视图 ---------------- */
+function renderWrong() {
+  showingWrong = true;
+  const list = loadWrong();
+  const head = '<div class="pcard"><div class="wrongbar"><b>个人错题集</b>' +
+    '<span>' + (list.length ? '共 ' + list.length + ' 题 · 只保留做错的题目' : '只保留做错的题目') +
+    "</span></div>" +
+    (list.length ? "" : '<p class="sub">还没有错题。做题时答错（或得分低于 80%）会自动收进这里。</p>') +
+    "</div>";
+
+  if (!list.length) {
+    $("#board").innerHTML = head;
+    return;
+  }
+
+  const cards = list.map((w) => {
+    let body = "";
+    if (w.type === "choice" && w.options.length) {
+      body = '<div class="opts">' + w.options.map((o, k) => {
+        const letter = String.fromCharCode(65 + k);
+        const right = letter === String(w.ref_answer).trim().toUpperCase().charAt(0);
+        return '<div class="opt static' + (right ? " right" : "") + '">' + esc(o) + "</div>";
+      }).join("") + "</div>";
+    }
+    return '<div class="pcard">' +
+      '<div class="phead">' +
+        '<span class="badge2 type">' + (w.type === "choice" ? "选择题" : w.type === "fill" ? "填空题" : "计算题") + "</span>" +
+        (w.topic ? '<span class="badge2">' + esc(w.topic) + "</span>" : "") +
+        (w.points ? '<span class="badge2 pt">' + w.points + " 分</span>" : "") +
+      "</div>" +
+      '<div class="stem">' + nl2br(w.stem) + "</div>" + body +
+      '<div class="ref">参考答案：<b>' + esc(w.ref_answer) + "</b></div>" +
+      (w.solution ? '<details class="sol"><summary>展开解析</summary><div class="body">' + nl2br(w.solution) + "</div></details>" : "") +
+      "</div>";
+  }).join("");
+
+  $("#board").innerHTML = head + cards;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+/* ---------------- 图片 ---------------- */
+function pickImage(qid, file) {
+  if (!file.type.startsWith("image/")) { toast("请选择图片文件"); return; }
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const maxW = 1400;
+      const scale = Math.min(1, maxW / img.width);
+      const cv = document.createElement("canvas");
+      cv.width = Math.round(img.width * scale);
+      cv.height = Math.round(img.height * scale);
+      cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+      S.images[qid] = cv.toDataURL("image/jpeg", 0.82);
+      toast("图片已就绪（" + Math.round(S.images[qid].length / 1024) + " KB）");
+      renderBoard();
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ---------------- 批改 ---------------- */
+async function post(url, body) {
+  const r = await fetch(url, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body)
+  });
+  const d = await r.json();
+  if (!r.ok || d.error) throw new Error(d.error || ("HTTP " + r.status));
+  return d;
+}
+
+async function gradeOne(qid) {
+  const btn = $("#gradeOne");
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>批改中'; }
+  try {
+    const r = await post("/api/practice/grade", {
+      qid, answer: S.answers[qid] || "", image: S.images[qid] || ""
+    });
+    const g = r.grade || r;
+    S.results[qid] = g;
+    if (!g.correct) addWrong(qById(qid), g);
+    renderBoard();
+    const box = document.querySelector(".pcard .scorebar");
+    if (box) box.scrollIntoView({ behavior: "smooth", block: "center" });
+  } catch (e) {
+    toast("批改失败：" + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = "提交批改"; }
+  }
+}
+
+async function submitPaper() {
+  const unanswered = S.questions.filter((q) =>
+    !(S.answers[q.id] || "").trim() && !S.images[q.id]).length;
+  if (unanswered > 0 && !confirm("还有 " + unanswered + " 题没作答，确定交卷？")) return;
+
+  const bar = document.querySelector(".paperbar");
+  bar.innerHTML = '<div class="t">正在批改…</div><div class="s">共 ' + S.questions.length + " 题</div>";
+
+  for (const q of S.questions) {
+    try {
+      const r = await post("/api/practice/grade", {
+        qid: q.id, answer: S.answers[q.id] || "", image: S.images[q.id] || ""
+      });
+      const g = r.grade || r;
+      S.results[q.id] = g;
+      if (!g.correct) addWrong(q, g);
+    } catch (e) {
+      S.results[q.id] = { score: 0, full: q.points, correct: false,
+        feedback: "批改失败：" + e.message, errors: [], ref_answer: "", solution: "" };
+    }
+    renderBoard();
+  }
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+/* ---------------- 上传文件出题 ---------------- */
+let pickedFile = null;
+
+$("#pickFile").onclick = () => $("#fileInput").click();
+$("#fileInput").onchange = (e) => {
+  pickedFile = (e.target.files && e.target.files[0]) ? e.target.files[0] : null;
+  $("#fileName").textContent = pickedFile ? pickedFile.name : "未选择文件";
+  $("#uploadBtn").disabled = !pickedFile;
+};
+
+function readAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = () => reject(new Error("文件读取失败"));
+    r.readAsDataURL(file);
+  });
+}
+
+// 图片先压到 1600px、JPEG 0.85，避免把十几 MB 的照片塞进请求
+function compressImage(file) {
+  return readAsDataURL(file).then((url) => new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, 1600 / img.width);
+      const cv = document.createElement("canvas");
+      cv.width = Math.round(img.width * scale);
+      cv.height = Math.round(img.height * scale);
+      cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+      resolve({
+        name: file.name.replace(/\.[^.]+$/, "") + ".jpg",
+        data: cv.toDataURL("image/jpeg", 0.85).split(",")[1]
+      });
+    };
+    img.onerror = () => reject(new Error("图片解码失败"));
+    img.src = url;
+  }));
+}
+
+$("#wrongBtn").onclick = renderWrong;
+$("#uploadBtn").onclick = async () => {
+  if (!pickedFile || S.busy) return;
+  const btn = $("#uploadBtn");
+  S.busy = true;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>识别中';
+  $("#board").innerHTML = '<div class="pcard"><span class="spinner dark"></span>' +
+    "AI 正在读文件、找题目、出相似题…（大文件可能要 20–40 秒）</div>";
+  try {
+    let name = pickedFile.name;
+    let data;
+    if (/\.(png|jpe?g|webp|gif|bmp)$/i.test(pickedFile.name)) {
+      const c = await compressImage(pickedFile);
+      name = c.name;
+      data = c.data;
+    } else {
+      if (pickedFile.size > 8 * 1024 * 1024) throw new Error("文件超过 8 MB，请压缩后再传");
+      const url = await readAsDataURL(pickedFile);
+      data = String(url).split(",")[1];
+    }
+
+    const r = await post("/api/practice/upload", {
+      name, data,
+      subject: S.subject,
+      difficulty: S.diff,
+      count: S.mode === "single" ? 1 : 5
+    });
+    if (!r.questions || !r.questions.length) throw new Error("没有生成出题目");
+    S.questions = r.questions;
+    S.answers = {}; S.images = {}; S.results = {};
+    renderBoard();
+    toast(r.recognized
+      ? ("识别到 " + r.recognized + " 道原题，已生成 " + r.questions.length + " 道相似题")
+      : ("没明确识别到原题，已围绕文件内容生成 " + r.questions.length + " 道题"));
+  } catch (e) {
+    $("#board").innerHTML = '<div class="pcard" style="color:#B5486A">上传失败：' + esc(e.message) + "</div>";
+  } finally {
+    S.busy = false;
+    btn.disabled = false;
+    btn.textContent = "识别并出相似题";
+  }
+};
+
+updateWrongCount();
+
+fetch("/api/health").then(r => r.json()).then(h => {
+  $("#engineBadge").innerHTML = "引擎 · <b>" + (h.llm ? "大模型" : "本地") + "</b>";
+}).catch(() => {});
+</script>
+<script src="/static/ping.js"></script>
+</body>
+</html>

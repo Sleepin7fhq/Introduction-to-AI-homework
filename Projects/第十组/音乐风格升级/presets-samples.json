@@ -1,0 +1,26 @@
+[
+    {
+        "label":  "A-司凤鬼畜Rave",
+        "bars":  10,
+        "style":  "sifeng_rave",
+        "prompt":  "老板画的饼，很燃，高能 drop，鬼畜"
+    },
+    {
+        "label":  "B-Hardstyle",
+        "bars":  10,
+        "style":  "hardstyle",
+        "prompt":  "老板画的饼，很燃，高能 drop，硬核"
+    },
+    {
+        "label":  "C-Techno",
+        "bars":  8,
+        "style":  "meme_techno",
+        "prompt":  "老板画的饼，很燃，高能 drop，地下"
+    },
+    {
+        "label":  "D-人声切片+鼓组",
+        "bars":  6,
+        "style":  "ghost_chop",
+        "prompt":  "老板画的饼，鬼畜卡点"
+    }
+]

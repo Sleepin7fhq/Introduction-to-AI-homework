@@ -1,0 +1,26 @@
+{
+  "id": "./",
+  "name": "今天练了吗",
+  "short_name": "今天练了吗",
+  "description": "每一次，都算数。属于你的训练计划、记录与进步。",
+  "lang": "zh-CN",
+  "start_url": "./#plan",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f9f3",
+  "theme_color": "#f7f9f3",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>课堂模式 · 梦见月瑞习</title>
+<link rel="icon" href="/static/mizuki-128.png">
+<link rel="stylesheet" href="/static/theme.css">
+<style>
+body{background:#171221;color:#F2ECFA;min-height:100vh;display:flex;align-items:center;
+  background-image:radial-gradient(circle at 20% 10%, #2B2238 0%, transparent 55%),
+                   radial-gradient(circle at 85% 90%, #241C33 0%, transparent 55%);}
+.stage{display:grid;grid-template-columns:auto 1fr;gap:56px;align-items:center;
+  max-width:1180px;margin:0 auto;padding:48px 40px;width:100%}
+@media (max-width:900px){.stage{grid-template-columns:1fr;gap:28px;text-align:center;justify-items:center}}
+.qrbox{background:#fff;border-radius:26px;padding:22px;box-shadow:0 30px 70px rgba(0,0,0,.45);
+  width:340px;height:340px;display:grid;place-items:center}
+.qrbox img{width:100%;height:100%;display:block}
+h1{font-size:44px;line-height:1.25;margin:0 0 14px;letter-spacing:2px;font-weight:700}
+.brandmark{font-size:13px;letter-spacing:4px;color:#A98BDD;margin-bottom:10px}
+.url{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:26px;
+  color:#C6A9F0;letter-spacing:.5px;word-break:break-all;margin-bottom:22px}
+.urlrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.copybtn{border:1px solid #3A3150;background:rgba(255,255,255,.04);color:#C9BEDC;
+  border-radius:10px;padding:8px 16px;font-size:13px;cursor:pointer;font-family:inherit;transition:.15s}
+.copybtn:hover{border-color:#A98BDD;color:#C6A9F0}
+.copybtn.done{border-color:#A98BDD;color:#C6A9F0}
+.online{font-size:17px;color:#A69BB8;margin-bottom:30px}
+.online b{color:#F2ECFA;font-size:26px;font-family:ui-monospace,Menlo,Consolas,monospace;
+  padding:0 6px;vertical-align:-2px}
+.quota{font-size:13px;color:#8E85A3;margin:-18px 0 26px;line-height:1.8}
+.quota b{color:#C9BEDC;font-family:ui-monospace,Menlo,Consolas,monospace}
+.quota .off{color:#E8A9C8}
+.quota button{margin-left:10px;border:1px solid #3A3150;background:rgba(255,255,255,.04);
+  color:#C9BEDC;border-radius:8px;padding:4px 11px;font-size:12px;cursor:pointer;font-family:inherit}
+.quota button:hover{border-color:#A98BDD;color:#C6A9F0}
+.cards{display:flex;gap:12px;flex-wrap:wrap}
+@media (max-width:900px){.cards{justify-content:center}}
+.cards a{display:block;text-decoration:none;color:#F2ECFA;border:1px solid #3A3150;
+  border-radius:14px;padding:14px 20px;transition:.18s;background:rgba(255,255,255,.03);min-width:150px}
+.cards a:hover{border-color:#A98BDD;background:rgba(169,139,221,.10);transform:translateY(-2px)}
+.cards .n{font-size:16px;font-weight:600;margin-bottom:4px}
+.cards .d{font-size:12.5px;color:#8E85A3;line-height:1.6}
+.alts{margin-top:18px;font-size:13px;color:#8E85A3}
+.alts .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.alts button{border:1px solid #3A3150;background:rgba(255,255,255,.04);color:#C9BEDC;
+  border-radius:9px;padding:6px 12px;font-size:12.5px;cursor:pointer;font-family:ui-monospace,Menlo,Consolas,monospace}
+.alts button:hover{border-color:#A98BDD;color:#C6A9F0}
+.alts button.on{border-color:#A98BDD;background:rgba(169,139,221,.12);color:#C6A9F0}
+.warn{margin-top:26px;background:rgba(181,72,106,.14);border:1px solid rgba(181,72,106,.45);
+  border-radius:12px;padding:14px 18px;font-size:14px;line-height:1.8;color:#E8A9C8;max-width:560px}
+.warn code{background:rgba(255,255,255,.08);padding:2px 7px;border-radius:5px;font-size:13px}
+.hintline{margin-top:22px;font-size:13px;color:#6F6785}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#A98BDD;
+  margin-right:7px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="qrbox"><img id="qr" alt="二维码" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'/>"></div>
+  <div>
+    <div class="brandmark">梦见月瑞习</div>
+    <h1>扫码进入课堂</h1>
+    <div class="urlrow">
+      <div class="url" id="url">正在获取地址…</div>
+      <button class="copybtn" id="copyBtn">复制网址</button>
+    </div>
+    <div class="online"><span class="dot"></span>已有 <b id="online">0</b> 人在线</div>
+    <div class="quota" id="quota"></div>
+
+    <div class="cards">
+      <a href="/static/bentongxue.html"><div class="n">梦见月</div><div class="d">讲一个概念，它装懂、追问</div></a>
+      <a href="/static/practice.html"><div class="n">练习</div><div class="d">线代 / 工数，出题与批改</div></a>
+      <a href="/static/pomodoro.html"><div class="n">一心净土</div><div class="d">专注 · 任务 · 质量报告</div></a>
+    </div>
+
+    <div class="alts hidden" id="alts"></div>
+    <div class="warn hidden" id="warn"></div>
+    <div class="hintline" id="hint"></div>
+    <div class="hintline">电脑上打开：同一 Wi-Fi 下，浏览器输入上面这个地址即可。</div>
+  </div>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+
+async function load() {
+  const r = await (await fetch("/api/classroom")).json().catch(() => null);
+  if (!r) { $("#url").textContent = "服务未响应"; return; }
+  const list = (r.urls && r.urls.length) ? r.urls : [r.local];
+  window.__urls = list;
+  const target = list[0];
+  $("#url").textContent = target;
+  const txt = encodeURIComponent(target);
+  const t = Date.now();
+  $("#qr").src = "/api/qr.svg?text=" + txt + "&t=" + t;
+  $("#online").textContent = r.online;
+
+  const alts = $("#alts");
+  if (r.lan && list.length > 1) {
+    alts.classList.remove("hidden");
+    alts.innerHTML = "扫不开？换一个地址试试：<div class='chips'>" +
+      list.map((u, i) => "<button data-i='" + i + "' class='" + (i === 0 ? "on" : "") + "'>" +
+        u.replace("http://", "").replace(/\/$/, "") + "</button>").join("") + "</div>";
+    alts.querySelectorAll("button").forEach((b) => {
+      b.onclick = () => {
+        alts.querySelectorAll("button").forEach((x) => x.classList.remove("on"));
+        b.classList.add("on");
+        const u = window.__urls[+b.dataset.i];
+        $("#url").textContent = u;
+        $("#qr").src = "/api/qr.svg?text=" + encodeURIComponent(u) + "&t=" + Date.now();
+      };
+    });
+  } else {
+    alts.classList.add("hidden");
+  }
+
+  if (!r.lan) {
+    const w = $("#warn");
+    w.classList.remove("hidden");
+    w.innerHTML = "现在只在本地运行，手机扫这个码打不开。<br>" +
+      "要用课堂模式，请关掉后双击 <code>start-lan.bat</code>（Windows）" +
+      "或运行 <code>DSH_DEMO_HOST=0.0.0.0 python3 server.py</code>，再打开本页。";
+    $("#hint").textContent = "注意：局域网模式要在 Windows 上跑，WSL 里的地址外面连不上。";
+  } else {
+    $("#hint").textContent = "同一个 Wi-Fi 下都能打开 · 打不开先看防火墙 · 打印多个地址时逐个试";
+  }
+}
+
+async function tick() {
+  const r = await (await fetch("/api/online")).json().catch(() => null);
+  if (r) $("#online").textContent = r.online;
+}
+
+let quotaLocal = false;
+
+async function loadQuota() {
+  const u = await (await fetch("/api/usage")).json().catch(() => null);
+  if (!u) return;
+  quotaLocal = !!u.is_local;
+  const box = $("#quota");
+  const pct = u.limit <= 0 ? 100 : Math.round(u.calls / u.limit * 100);
+  let html = "访客 AI 额度：<b>" + u.calls + " / " + u.limit + "</b> 次";
+  if (!u.enabled) {
+    html = "<span class='off'>访客 AI 已关闭，所有人走本地规则引擎</span>";
+  } else if (u.calls >= u.limit) {
+    html = "<span class='off'>访客额度已用完（" + u.calls + " 次），已自动切到本地引擎</span>";
+  } else if (pct >= 80) {
+    html += "　<span class='off'>快用完了</span>";
+  }
+  if (quotaLocal) {
+    html += "<button id='qBtn'>" + (u.enabled ? "关闭访客 AI" : "开启访客 AI") + "</button>";
+  }
+  box.innerHTML = html;
+  const b = $("#qBtn");
+  if (b) {
+    b.onclick = async () => {
+      const r = await (await fetch("/api/visitor-ai", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: !u.enabled })
+      })).json().catch(() => null);
+      if (r) loadQuota();
+    };
+  }
+}
+
+function selectUrl() {
+  const el = $("#url");
+  const r = document.createRange();
+  r.selectNodeContents(el);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(r);
+}
+
+async function copyUrl() {
+  const text = $("#url").textContent.trim();
+  const btn = $("#copyBtn");
+  let ok = false;
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      ok = true;
+    }
+  } catch (e) { ok = false; }
+  if (!ok) {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+  }
+  if (ok) {
+    btn.textContent = "已复制 ✓";
+    btn.classList.add("done");
+  } else {
+    // http 页面拿不到剪贴板权限：把网址选中，让用户自己按 Ctrl+C
+    selectUrl();
+    btn.textContent = "已选中，按 Ctrl+C";
+    btn.classList.add("done");
+  }
+  setTimeout(() => { btn.textContent = "复制网址"; btn.classList.remove("done"); }, 2400);
+}
+
+$("#url").onclick = selectUrl;
+$("#url").style.cursor = "pointer";
+$("#url").title = "点一下选中，方便复制";
+
+$("#copyBtn").onclick = copyUrl;
+
+load();
+loadQuota();
+setInterval(tick, 3000);
+setInterval(loadQuota, 8000);
+setInterval(load, 60000);
+</script>
+</body>
+</html>

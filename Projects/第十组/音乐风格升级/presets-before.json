@@ -1,0 +1,20 @@
+[
+    {
+        "label":  "A-普通EDM(改前)",
+        "bars":  8,
+        "style":  "house",
+        "prompt":  "老板画的饼，很燃，高能 drop，电子舞曲"
+    },
+    {
+        "label":  "B-司凤Rave(改前)",
+        "bars":  8,
+        "style":  "sifeng",
+        "prompt":  "老板画的饼，很燃，高能 drop，鬼畜"
+    },
+    {
+        "label":  "C-Hardstyle(改前)",
+        "bars":  8,
+        "style":  "rock",
+        "prompt":  "老板画的饼，很燃，高能 drop，硬核"
+    }
+]
