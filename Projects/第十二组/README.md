@@ -25,7 +25,8 @@ DeepSeek Harness（DSH）是单用户本地 AI 编程助手，默认只监听 12
 
 **上游依赖**：网关需要配合 DSH Web 0.2.2-rc.1 运行（第三方依赖，不随本仓库分发）。
 **一键安装包**（含 DSH 与内置 Node，约 120MB，超过 GitHub 单文件上限 100MB）：
-- 百度网盘：https://pan.baidu.com/s/1n3kpPNIN5Gq_CcMr9wAGlA （提取码：4ghc）
+- GitHub Release 直链：https://github.com/Sleepin7fhq/Introduction-to-AI-homework/releases/download/v1.0/DSH-Lan-Share-Setup.exe
+- 百度网盘（备用）：https://pan.baidu.com/s/1n3kpPNIN5Gq_CcMr9wAGlA （提取码：4ghc）
 - SHA256：BBBF62FF1B4DCA49D30727E5FDAAC334503583DA800EF9C4846CE89959E2B12A
 
 ## 三、如何运行
