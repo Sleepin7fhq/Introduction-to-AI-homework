@@ -1,0 +1,127 @@
+{
+  "cases": [
+    {
+      "case": "A切楼清理",
+      "passed": true
+    },
+    {
+      "case": "A真实讲解",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "case": "A追问",
+      "passed": true,
+      "question": "中大院哪一年落成？",
+      "errors": []
+    },
+    {
+      "case": "A追问",
+      "passed": true,
+      "question": "当时叫什么名字？",
+      "errors": []
+    },
+    {
+      "case": "A刷新不重复请求",
+      "passed": true
+    },
+    {
+      "case": "B切楼清理",
+      "passed": true
+    },
+    {
+      "case": "B真实讲解",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "case": "B追问",
+      "passed": true,
+      "question": "体育馆近年举办了哪些活动？",
+      "errors": [],
+      "search_errors": [],
+      "answers": [
+        "东南大学四牌楼校区体育馆近年举办了2025年11月22日的教职工羽毛球比赛，交通学院“交院羽林军”在此参与男单、女单、男双、女双四项角逐，并取得男双冠军与季军、女双亚军等佳绩。"
+      ]
+    },
+    {
+      "case": "B刷新不重复请求",
+      "passed": true
+    },
+    {
+      "case": "C切楼清理",
+      "passed": true
+    },
+    {
+      "case": "C真实讲解",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "case": "C追问",
+      "passed": true,
+      "question": "外墙的八字是什么意思？",
+      "errors": []
+    },
+    {
+      "case": "C详细讲解",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "case": "C刷新不重复请求",
+      "passed": true
+    },
+    {
+      "case": "离线备用模式",
+      "passed": true
+    }
+  ],
+  "responses": [
+    {
+      "finish": "stop",
+      "content_length": 49,
+      "reasoning_length": 530
+    },
+    {
+      "finish": "stop",
+      "content_length": 58,
+      "reasoning_length": 640
+    },
+    {
+      "finish": "stop",
+      "content_length": 58,
+      "reasoning_length": 850
+    },
+    {
+      "finish": "stop",
+      "content_length": 56,
+      "reasoning_length": 540
+    },
+    {
+      "finish": "stop",
+      "content_length": 33,
+      "reasoning_length": 877
+    },
+    {
+      "finish": "stop",
+      "content_length": 210,
+      "reasoning_length": 0
+    },
+    {
+      "finish": "stop",
+      "content_length": 52,
+      "reasoning_length": 915
+    },
+    {
+      "finish": "stop",
+      "content_length": 87,
+      "reasoning_length": 1571
+    },
+    {
+      "finish": "stop",
+      "content_length": 144,
+      "reasoning_length": 1327
+    }
+  ]
+}

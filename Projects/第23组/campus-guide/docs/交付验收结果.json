@@ -1,0 +1,69 @@
+{
+  "model": "qwen3.7-plus",
+  "vision": [
+    {
+      "photo": "T02.jpg",
+      "expected": "A",
+      "actual": "A",
+      "reason": "建筑侧墙爬满藤蔓，且有连续排列的长方形窗，与候选A的外观线索及参考图2特征一致。",
+      "passed": true,
+      "seconds": 9.7
+    },
+    {
+      "photo": "T03.jpg",
+      "expected": "A",
+      "actual": "A",
+      "reason": "建筑具有三角形山花和带有卷涡装饰的浅色圆柱，与候选A的中大院特征一致。",
+      "passed": true,
+      "seconds": 14.3
+    },
+    {
+      "photo": "T01.jpg",
+      "expected": "A",
+      "actual": "A",
+      "reason": "待识别图左侧建筑展示了侧墙连续排列的长方形窗，且底层窗户带有竖向铁栅栏，路边有棕榈树，与编号A（中大院）参考图中的侧墙及正门底层窗特征相符。",
+      "passed": true,
+      "seconds": 26.3
+    },
+    {
+      "photo": "T04.jpg",
+      "expected": "B",
+      "actual": "B",
+      "reason": "建筑具有两侧楼梯通向中央平台的结构，门廊上方有半圆形墙面及题字，且为灰砖墙面配浅色窗框，符合体育馆特征。",
+      "passed": true,
+      "seconds": 11.6
+    },
+    {
+      "photo": "T05.jpg",
+      "expected": "B",
+      "actual": "B",
+      "reason": "建筑具有两侧楼梯通向中央平台的特征，门廊前有圆柱，且为灰砖墙面，与体育馆的外观线索相符。",
+      "passed": true,
+      "seconds": 10.3
+    },
+    {
+      "photo": "T06.jpg",
+      "expected": "B",
+      "actual": "B",
+      "reason": "建筑门廊上方半圆形灰砖墙面有金色“體育館”题字，且两侧楼梯通向中央平台，门廊前有两根圆柱，符合体育馆特征。",
+      "passed": true,
+      "seconds": 8.9
+    },
+    {
+      "photo": "blank_control",
+      "expected": "无法确定",
+      "actual": "无法确定",
+      "reason": "图片为空白，无可见建筑特征",
+      "passed": true,
+      "seconds": 3.4
+    },
+    {
+      "photo": "T07.jpg",
+      "expected": "C",
+      "actual": "无法确定",
+      "reason": "待识别图中的建筑立面特征（如密集空调外机、右侧墙面的菱形/三角形小窗排列）与候选A、B、C的显著特征（圆柱山花、灰砖楼梯、竖带分隔或横向长窗）均不匹配，缺乏共同特征。",
+      "passed": false,
+      "seconds": 33.4
+    }
+  ]
+}

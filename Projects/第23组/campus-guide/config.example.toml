@@ -1,0 +1,11 @@
+# 复制为同目录的 config.toml 后在本机填写。离线模拟无需配置。
+API_KEY = ""
+# 百炼北京地域示例。把 {WorkspaceId} 换成自己的业务空间 ID。
+# 其他服务商请填写其官方兼容接口的基础地址，末尾不含 /chat/completions。
+BASE_URL = "https://{WorkspaceId}.cn-beijing.maas.aliyuncs.com/compatible-mode/v1"
+MODEL_NAME = "qwen3-vl-plus"
+
+SEARCH_ENABLED = true
+
+# 联网补充模型独立于识图模型，复用当前百炼密钥。
+SEARCH_MODEL = "qwen-plus"

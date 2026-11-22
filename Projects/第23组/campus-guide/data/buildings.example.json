@@ -1,0 +1,41 @@
+[
+  {
+    "id": "A",
+    "name": "示例建筑 A · 拱门",
+    "placeholder": true,
+    "visual_cues": ["中央蓝色拱门", "拱门上方有一扇圆窗"],
+    "reference_images": [],
+    "sources": [],
+    "facts": [
+      {"id": "entrance", "text": "示意图中，入口位于立面中央，可以从蓝色拱门进入。", "keywords": ["入口", "门", "进入"], "source_ids": []},
+      {"id": "window", "text": "拱门正上方有一扇圆窗，和入口在同一条竖线上。", "keywords": ["圆窗", "正上方", "竖线"], "source_ids": []},
+      {"id": "sides", "text": "从中央向两侧看，长方形窗户分成左右两组。", "keywords": ["两侧", "两组", "长方形", "左右"], "source_ids": []}
+    ]
+  },
+  {
+    "id": "B",
+    "name": "示例建筑 B · 长廊",
+    "placeholder": true,
+    "visual_cues": ["平顶长廊", "连续方柱"],
+    "reference_images": [],
+    "sources": [],
+    "facts": [
+      {"id": "corridor", "text": "在这张虚构资料卡里，立面前方是一条平顶长廊。", "keywords": ["长廊", "屋顶", "平顶"], "source_ids": []},
+      {"id": "columns", "text": "沿着长廊望过去，可以看到一排间隔相同的方柱。", "keywords": ["柱", "间隔"], "source_ids": []},
+      {"id": "windows", "text": "方柱后面的横向窗带延续了长廊的方向。", "keywords": ["窗", "横向"], "source_ids": []}
+    ]
+  },
+  {
+    "id": "C",
+    "name": "示例建筑 C · 塔楼",
+    "placeholder": true,
+    "visual_cues": ["三角形塔顶", "狭长竖窗"],
+    "reference_images": [],
+    "sources": [],
+    "facts": [
+      {"id": "tower", "text": "这张虚构资料卡把塔楼设定为整座建筑最高的部分。", "keywords": ["塔楼", "最高", "高度"], "source_ids": []},
+      {"id": "roof", "text": "塔楼上方是三角形屋顶，从远处可以先观察它的轮廓。", "keywords": ["屋顶", "三角", "轮廓"], "source_ids": []},
+      {"id": "windows", "text": "塔身的狭长竖窗沿同一条竖线排列。", "keywords": ["窗", "排列", "塔身"], "source_ids": []}
+    ]
+  }
+]

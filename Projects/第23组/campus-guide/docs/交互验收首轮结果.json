@@ -1,0 +1,104 @@
+{
+  "cases": [
+    {
+      "case": "A切楼清理",
+      "passed": true
+    },
+    {
+      "case": "A真实讲解",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "case": "A追问",
+      "passed": true,
+      "question": "中大院哪一年落成？",
+      "errors": []
+    },
+    {
+      "case": "A追问",
+      "passed": true,
+      "question": "当时叫什么名字？",
+      "errors": []
+    },
+    {
+      "case": "A刷新不重复请求",
+      "passed": true
+    },
+    {
+      "case": "B切楼清理",
+      "passed": true
+    },
+    {
+      "case": "B真实讲解",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "case": "B追问",
+      "passed": true,
+      "question": "体育馆近年举办了哪些活动？",
+      "errors": [],
+      "search_errors": [],
+      "answers": [
+        "2025年11月22日，该校教职工羽毛球比赛在此举行，交通学院“交院羽林军”参与男单、女单、男双、女双四项角逐，并刷新学院历史最佳战绩。"
+      ]
+    },
+    {
+      "case": "B刷新不重复请求",
+      "passed": true
+    },
+    {
+      "case": "C切楼清理",
+      "passed": true
+    },
+    {
+      "case": "C真实讲解",
+      "passed": false,
+      "errors": [
+        "模型回复格式异常。可重新点击当前操作，或核对模型是否支持所需输入。"
+      ]
+    },
+    {
+      "case": "离线备用模式",
+      "passed": true
+    }
+  ],
+  "responses": [
+    {
+      "finish": "stop",
+      "content_length": 49,
+      "reasoning_length": 1040
+    },
+    {
+      "finish": "stop",
+      "content_length": 41,
+      "reasoning_length": 437
+    },
+    {
+      "finish": "stop",
+      "content_length": 41,
+      "reasoning_length": 450
+    },
+    {
+      "finish": "stop",
+      "content_length": 60,
+      "reasoning_length": 615
+    },
+    {
+      "finish": "stop",
+      "content_length": 45,
+      "reasoning_length": 643
+    },
+    {
+      "finish": "stop",
+      "content_length": 328,
+      "reasoning_length": 0
+    },
+    {
+      "finish": "stop",
+      "content_length": 46,
+      "reasoning_length": 1006
+    }
+  ]
+}
