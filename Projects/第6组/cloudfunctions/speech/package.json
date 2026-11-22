@@ -1,9 +1,0 @@
-{
-  "name": "speech",
-  "version": "1.0.0",
-  "description": "语音双能力：一句话识别(ASR) + 基础语音合成(TTS)，替代个人主体不可用的同声传译插件",
-  "main": "index.js",
-  "dependencies": {
-    "wx-server-sdk": "~2.6.3"
-  }
-}

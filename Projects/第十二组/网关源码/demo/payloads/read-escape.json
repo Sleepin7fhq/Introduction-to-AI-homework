@@ -1,1 +1,0 @@
-{"type":"client-request","rpcId":"d2","method":"workspaceFiles/read","payload":{"args":{"workspaceFileScopeId":"session-0b2ae607-20ba-4e9f-b2e2-6ed06cdda649","path":"../alice/alice-notes.txt","range":{"offset":1,"limit":200}}}}

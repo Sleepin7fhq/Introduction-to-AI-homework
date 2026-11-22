@@ -1,3 +1,0 @@
-# Python 3.11+ recommended.
-# Core execution, HTTP server, tests and demo generation use the standard library.
-# No third-party Python packages are required for the default workflow.
